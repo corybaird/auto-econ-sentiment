@@ -1,0 +1,40 @@
+name: Create GitHub Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "auto-econ-sentiment ${{ github.ref_name }}"
+          body: |
+            ## Release ${{ github.ref_name }}
+
+            See [CHANGELOG.md](https://github.com/corybaird/auto-econ-sentiment/blob/main/CHANGELOG.md) for full release notes.
+
+            ### Install
+
+            ```bash
+            pip install auto-econ-sentiment==${{ steps.version.outputs.VERSION }}
+            ```
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc') }}

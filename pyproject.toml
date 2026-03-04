@@ -1,0 +1,88 @@
+[project]
+name = "auto-econ-sentiment"
+version = "0.1.0"
+description = "Lexical sentiment analysis pipeline for central bank and economic text data."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+keywords = ["sentiment", "nlp", "economics", "central-bank", "finance"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Linguistic",
+]
+dependencies = [
+    "nltk>=3.9.1,<4",
+    "pandas>=2.2.3,<3",
+    "pyarrow>=19.0.0,<20",
+    "pyyaml>=6.0,<7",
+    "scikit-learn>=1.5.2,<2",
+    "spacy>=3.8.2,<4",
+    "tqdm>=4.0.0,<5",
+]
+
+[project.optional-dependencies]
+viz = [
+    "gradio>=5.29.0,<6",
+    "matplotlib>=3.0,<4",
+    "pillow>=11.0.0,<12",
+    "plotly>=5.24.1,<6",
+    "seaborn>=0.13.2,<1",
+    "wordcloud>=1.9.4,<2",
+    "dataframe-image>=0.2.6,<1",
+    "xlsxwriter>=3.2.5,<4",
+]
+dev = [
+    "pytest>=9.0.2",
+    "ruff>=0.4.0",
+]
+notebooks = [
+    "jupyter>=1.1.1",
+    "fredapi>=0.5.2",
+]
+
+[project.urls]
+Homepage = "https://github.com/corybaird/auto-econ-sentiment"
+Repository = "https://github.com/corybaird/auto-econ-sentiment"
+Changelog = "https://github.com/corybaird/auto-econ-sentiment/blob/main/CHANGELOG.md"
+"Bug Tracker" = "https://github.com/corybaird/auto-econ-sentiment/issues"
+
+[tool.uv.sources]
+en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0.tar.gz" }
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/auto_econ_sentiment"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src/auto_econ_sentiment/",
+    "/LICENSE",
+    "/README.md",
+    "/CHANGELOG.md",
+]
+exclude = [
+    "/src/auto_econ_sentiment/data/*.csv",
+    "/src/auto_econ_sentiment/data/*.xlsx",
+]
+
+# Ensure non-python data files inside the package are bundled into the wheel
+[tool.hatch.build.targets.wheel.shared-data]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

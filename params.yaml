@@ -1,0 +1,31 @@
+# 1. SECTION 1: SENTIMENT
+# src/auto_econ_sentiment/pipeline.py
+input:
+  file_path: "data/raw/monetary_policy_statement_mostrecent.csv"
+  text_column: text
+  date_column: date
+
+output:
+  export_path: data/sentiment/
+  export_results: true
+
+models:
+  lexical:
+    #text_column_lexical: 'text_clean'
+    dictionaries: [
+      correa, hubert, lm, hiv, bn, ap
+    ]
+    aggregation_methods: [pos, alt]
+    text_columns: [text_tokens_str, text_stems]
+
+cleaning:
+  clean_html: true
+  clean_numbers_percentages: true
+  remove_headers: [
+     'For immediate release',
+     'The Federal Reserve, the central bank of the United States, provides the nation with a safe, flexible, and stable monetary and financial system. Federal Open Market Committee Monetary Policy Principles and Practice Policy Implementation Reports Review of Monetary Policy Strategy, Tools, and Communications Institution Supervision Reports Reporting Forms Supervision & Regulation Letters Banking Applications & Legal Developments Regulatory Resources Banking & Data Structure Financial Stability Assessments Financial Stability Coordination & Actions Reports Regulations & Statutes Payment Policies Reserve Bank Payment Services & Data Financial Market Utilities & Infrastructures Research, Reports, & Committees Working Papers and Notes Data, Models and Tools Bank Assets and Liabilities Bank Structure Data Business Finance Dealer Financing Terms Exchange Rates and International Data Financial Accounts Household Finance Industrial Activity Interest Rates Micro Data Reference Manual \(MDRM\) Money Stock and Reserve Balances Other Regulations Supervision& Enforcement Community Development Research& Analysis Consumer Resources',
+     'Federal Open Market Committee Monetary Policy Principles and Practice Policy Implementation Reports Review of Monetary Policy Strategy, Tools, and Communications Institution Supervision Reports Reporting Forms Supervision & Regulation Letters Banking Applications & Legal Developments Regulatory Resources Banking & Data Structure Financial Stability Assessments Financial Stability Coordination & Actions Reports Regulations & Statutes Payment Policies Reserve Bank Payment Services & Data Financial Market Utilities & Infrastructures Research, Reports, & Committees Working Papers and Notes Data, Models and Tools Bank Assets and Liabilities Bank Structure Data Business Finance Dealer Financing Terms Exchange Rates and International Data Financial Accounts Household Finance Industrial Activity Interest Rates Micro Data Reference Manual (MDRM) Money Stock and Reserve Balances Other Regulations Supervision& Enforcement Community Development Research& Analysis Consumer Resources'
+  ]
+  tokenize: true
+  stem: true
+
