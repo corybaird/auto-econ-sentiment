@@ -55,42 +55,50 @@ class AutoEconSentiment:
         logger.info(f"Data cleaned successfully. Shape: {self.df_clean.shape}")
         return self.df_clean, self.df_sentences
 
-    def analyze_sentiment_lexical(self, dictionaries, aggregation_methods, text_columns):
+    def analyze_sentiment_lexical(self, dictionaries, aggregation_methods):
         logger.info("Analyzing sentiment using lexical methods...")
         pipe_lexical = SentimentLexical(df_input=self.df_clean.dropna(subset=[self.text_column]))
         df_sent_lexical = []
 
-        for sentiment in tqdm(dictionaries, desc="Lexical Methods"):
+        unstemmed_dicts = dictionaries.get("unstemmed", []) if isinstance(dictionaries, dict) else dictionaries
+        stemmed_dicts = dictionaries.get("stemmed", []) if isinstance(dictionaries, dict) else []
+        
+        dict_text_map = []
+        for d in unstemmed_dicts:
+            dict_text_map.append((d, "text_tokens_str"))
+        for d in stemmed_dicts:
+            dict_text_map.append((d, "text_stems"))
+
+        for sentiment, text in tqdm(dict_text_map, desc="Lexical Methods"):
             for aggregation_method in aggregation_methods:
-                for text in text_columns:
-                    try:
-                        df_sent = (
-                            pipe_lexical
-                            .sentiment_pipeline(
-                                dictionary_name=sentiment,
-                                text_column=text,
-                                method=aggregation_method,
-                            )
-                            .set_index("id_text")
-                            .filter(regex=f"{sentiment}|count|words")
+                try:
+                    df_sent = (
+                        pipe_lexical
+                        .sentiment_pipeline(
+                            dictionary_name=sentiment,
+                            text_column=text,
+                            method=aggregation_method,
                         )
-                        if text == "text_stems":
-                            df_sent = df_sent.rename(
-                                lambda col_name: f"{col_name}_stem" if sentiment in col_name else col_name,
-                                axis="columns",
-                            )
-                        df_sent_lexical.append(df_sent)
-                        logger.info(f"Completed lexical analysis for {sentiment} with {aggregation_method}")
-                    except Exception as e:
-                        raise SentimentAnalysisError(
-                            f"Error in lexical analysis for {sentiment} with {aggregation_method}: {e}"
-                        ) from e
+                        .set_index("id_text")
+                        .filter(regex=f"{sentiment}|count|words")
+                    )
+                    if text == "text_stems":
+                        df_sent = df_sent.rename(
+                            lambda col_name: f"{col_name}_stem" if sentiment in col_name else col_name,
+                            axis="columns",
+                        )
+                    df_sent_lexical.append(df_sent)
+                    logger.info(f"Completed lexical analysis for {sentiment} with {aggregation_method}")
+                except Exception as e:
+                    raise SentimentAnalysisError(
+                        f"Error in lexical analysis for {sentiment} with {aggregation_method}: {e}"
+                    ) from e
 
         self.df_sent_lexical = pd.concat(df_sent_lexical, axis=1)
         logger.info("Lexical sentiment analysis complete.")
         return self.df_sent_lexical
 
-    def run(self, clean_config, dictionaries, aggregation_methods, lexical_text_columns, export_results):
+    def run(self, clean_config, dictionaries, aggregation_methods, export_results):
         logger.info("Starting AutoEconSentiment pipeline...")
         self.load_data()
         self.clean_data(clean_config=clean_config)
@@ -99,7 +107,6 @@ class AutoEconSentiment:
             self.analyze_sentiment_lexical(
                 dictionaries=dictionaries,
                 aggregation_methods=aggregation_methods,
-                text_columns=lexical_text_columns,
             )
         else:
             logger.warning("Skipping lexical sentiment analysis: no dictionaries or aggregation methods provided.")
@@ -154,9 +161,8 @@ if __name__ == "__main__":
         )
         analyzer.run(
             clean_config={"clean_html": True, "clean_numbers_percentages": True, "remove_headers": []},
-            dictionaries=["correa", "hubert", "lm", "hiv"],
+            dictionaries={"unstemmed": ["correa", "hubert", "lm", "hiv"], "stemmed": []},
             aggregation_methods=["posneg", "allwords"],
-            lexical_text_columns=["text"],
             export_results=True,
         )
         logger.info("Dummy data pipeline run completed.")
@@ -172,9 +178,8 @@ if __name__ == "__main__":
         lexical_config = config.get("models", {}).get("lexical", {})
         analyzer.run(
             clean_config=config.get("cleaning", {}),
-            dictionaries=lexical_config.get("dictionaries", []),
+            dictionaries=lexical_config.get("dictionaries", {}),
             aggregation_methods=lexical_config.get("aggregation_methods", []),
-            lexical_text_columns=lexical_config.get("text_columns", []),
             export_results=config["output"].get("export_results", True),
         )
         logger.info("Pipeline run with params.yaml configuration completed.")

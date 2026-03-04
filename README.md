@@ -47,6 +47,26 @@ Configure your data inputs, cleaning rules, and target dictionaries in `params.y
 uv run python -m auto_econ_sentiment.pipeline
 ```
 
+### 3. Usage from Python
+
+```python
+from auto_econ_sentiment.pipeline import AutoEconSentiment
+
+analyzer = AutoEconSentiment(
+    import_file_path="data/raw/monetary_policy_statement_mostrecent.csv",
+    text_column="text",
+    date_column="date",
+    export_path="data/sentiment/"
+)
+analyzer.load_data()
+analyzer.clean_data(clean_config={"tokenize": True, "stem": True})
+
+df_sent_lexical = analyzer.analyze_sentiment_lexical(
+    dictionaries={"unstemmed": ["correa", "hubert", "lm", "hiv"], "stemmed": ["ap"]},
+    aggregation_methods=["posneg", "allwords"]
+)
+```
+
 ## Pipeline Components
 
 - **Clean & Load**: `src.clean.text_loader`, `src.clean.text_clean`

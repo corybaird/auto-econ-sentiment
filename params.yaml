@@ -12,11 +12,10 @@ output:
 models:
   lexical:
     #text_column_lexical: 'text_clean'
-    dictionaries: [
-      correa, hubert, lm, hiv, bn, ap
-    ]
+    dictionaries:
+      unstemmed: [correa, hubert, lm, hiv]
+      stemmed: [bn, ap]
     aggregation_methods: [posneg, allwords]
-    text_columns: [text_tokens_str, text_stems]
 
 cleaning:
   clean_html: true
