@@ -6,7 +6,7 @@ import os
 import logging
 
 class SentimentLexical(SentimentBase):
-    def __init__(self, df_input, text_column='text', dictionary_path=None, log_level=logging.INFO):
+    def __init__(self, df_input, text_column='text', dictionary_path=None, log_level=logging.WARNING):
         super().__init__(df_input, text_column)
         if dictionary_path is None:
             dictionary_path = os.path.join(os.path.dirname(__file__), "..", "data", "lexical_master_dict.yaml")
