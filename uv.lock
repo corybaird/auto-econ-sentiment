@@ -359,15 +359,17 @@ wheels = [
 
 [[package]]
 name = "auto-econ-sentiment"
-version = "0.2.0"
+version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "matplotlib" },
     { name = "nltk" },
     { name = "pandas" },
     { name = "pyarrow" },
     { name = "pyyaml" },
     { name = "scikit-learn", version = "1.7.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "scikit-learn", version = "1.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "seaborn" },
     { name = "spacy" },
     { name = "tqdm" },
 ]
@@ -403,6 +405,7 @@ requires-dist = [
     { name = "fredapi", marker = "extra == 'notebooks'", specifier = ">=0.5.2" },
     { name = "gradio", marker = "extra == 'viz'", specifier = ">=5.29.0,<6" },
     { name = "jupyter", marker = "extra == 'notebooks'", specifier = ">=1.1.1" },
+    { name = "matplotlib", specifier = ">=3.10.8" },
     { name = "matplotlib", marker = "extra == 'viz'", specifier = ">=3.0,<4" },
     { name = "nltk", specifier = ">=3.9.1,<4" },
     { name = "pandas", specifier = ">=2.2.3,<3" },
@@ -413,6 +416,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0,<7" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4.0" },
     { name = "scikit-learn", specifier = ">=1.5.2,<2" },
+    { name = "seaborn", specifier = ">=0.13.2" },
     { name = "seaborn", marker = "extra == 'viz'", specifier = ">=0.13.2,<1" },
     { name = "spacy", specifier = ">=3.8.2,<4" },
     { name = "tqdm", specifier = ">=4.0.0,<5" },

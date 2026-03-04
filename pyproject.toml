@@ -18,11 +18,13 @@ classifiers = [
     "Topic :: Text Processing :: Linguistic",
 ]
 dependencies = [
+    "matplotlib>=3.10.8",
     "nltk>=3.9.1,<4",
     "pandas>=2.2.3,<3",
     "pyarrow>=19.0.0,<20",
     "pyyaml>=6.0,<7",
     "scikit-learn>=1.5.2,<2",
+    "seaborn>=0.13.2",
     "spacy>=3.8.2,<4",
     "tqdm>=4.0.0,<5",
 ]
