@@ -196,37 +196,37 @@ def lexical(fomc_df):
     return SentimentLexical(df_input=fomc_df, text_column="text", dictionary_path=str(DICT_PATH))
 
 
-def test_sentiment_hubert_pos(lexical):
-    result = lexical.sentiment_pipeline(dictionary_name="hubert", method="pos")
-    assert "hubert_sentiment_pos" in result.columns
-    scores = result["hubert_sentiment_pos"]
+def test_sentiment_hubert_posneg(lexical):
+    result = lexical.sentiment_pipeline(dictionary_name="hubert", method="posneg")
+    assert "hubert_sentiment_posneg" in result.columns
+    scores = result["hubert_sentiment_posneg"]
     assert all(scores >= 0)
 
 
-def test_sentiment_lm_pos(lexical):
-    result = lexical.sentiment_pipeline(dictionary_name="lm", method="pos")
-    assert "lm_sentiment_pos" in result.columns
+def test_sentiment_lm_posneg(lexical):
+    result = lexical.sentiment_pipeline(dictionary_name="lm", method="posneg")
+    assert "lm_sentiment_posneg" in result.columns
 
 
-def test_sentiment_correa_alt(lexical):
-    result = lexical.sentiment_pipeline(dictionary_name="correa", method="alt")
-    assert "correa_sentiment_alt" in result.columns
+def test_sentiment_correa_allwords(lexical):
+    result = lexical.sentiment_pipeline(dictionary_name="correa", method="allwords")
+    assert "correa_sentiment_allwords" in result.columns
 
 
 def test_sentiment_text_column_override_does_not_mutate(fomc_df):
     fomc_df["tokens"] = fomc_df["text"].str.lower()
     analyzer = SentimentLexical(df_input=fomc_df, text_column="text", dictionary_path=str(DICT_PATH))
-    analyzer.sentiment_pipeline(dictionary_name="hubert", method="pos", text_column="tokens")
+    analyzer.sentiment_pipeline(dictionary_name="hubert", method="posneg", text_column="tokens")
     assert analyzer.text_column == "text", "sentiment_pipeline must not mutate self.text_column"
 
 
 def test_sentiment_unknown_dictionary(lexical):
     with pytest.raises(KeyError):
-        lexical.sentiment_pipeline(dictionary_name="nonexistent_dict", method="pos")
+        lexical.sentiment_pipeline(dictionary_name="nonexistent_dict", method="posneg")
 
 
 def test_sentiment_word_counts_nonzero(lexical):
-    result = lexical.sentiment_pipeline(dictionary_name="lm", method="pos")
+    result = lexical.sentiment_pipeline(dictionary_name="lm", method="posneg")
     pos_col = [c for c in result.columns if "counttoken_positive" in c]
     neg_col = [c for c in result.columns if "counttoken_negative" in c]
     assert pos_col or neg_col, "Expected word count columns in output"

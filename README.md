@@ -8,7 +8,7 @@ A streamlined, production-ready pipeline for extracting and analyzing economic s
 ## Features
 
 - **Robust Data Cleaning**: Automatically handles HTML, unicode normalization, special character encodings, percent fixes, header/footer stripping, tokenization and stemming.
-- **Lexical Sentiment Execution**: Computes word-level and sentence-level sentiment counts and aggregates (methods: `pos`, `alt`) across multiple dictionaries:
+- **Lexical Sentiment Execution**: Computes word-level and sentence-level sentiment counts and aggregates (methods: `posneg`, `allwords`) across multiple dictionaries:
   - Correa (Financial Stability)
   - Hubert (Central Bank Tone)
   - Loughran-McDonald (LM)

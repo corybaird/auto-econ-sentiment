@@ -15,7 +15,7 @@ models:
     dictionaries: [
       correa, hubert, lm, hiv, bn, ap
     ]
-    aggregation_methods: [pos, alt]
+    aggregation_methods: [posneg, allwords]
     text_columns: [text_tokens_str, text_stems]
 
 cleaning:

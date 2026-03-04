@@ -91,15 +91,15 @@ class SentimentLexical(SentimentBase):
     def _postprocess_aggregate_sentiment(self, df_count: pd.DataFrame, method: str) -> pd.DataFrame:
         self.logger.info(f"Aggregating sentiment using method: {method}")
         try:
-            if method == 'pos':
+            if method == 'posneg':
                 df_count['sentiment'] = df_count.apply(
                     lambda x: 1 + ((x['counttoken_positive'] - x['counttoken_negative']) / (x['counttoken_positive'] + x['counttoken_negative'])) 
                     if (x['counttoken_positive'] + x['counttoken_negative']) > 0 else 1,  # Avoid division by zero
                     axis=1
                 )
-                self.logger.debug(f"Sentiment scores generated using 'pos' method, mean: {df_count['sentiment'].mean():.2f}")
+                self.logger.debug(f"Sentiment scores generated using 'posneg' method, mean: {df_count['sentiment'].mean():.2f}")
             
-            elif method == 'alt':
+            elif method == 'allwords':
                 # Calculate total tokens for each document
                 total_tokens = CountVectorizer(stop_words='english').fit_transform(self.input_df[self.text_column]).toarray().sum(axis=1)
                 # Add total tokens to the dataframe for reference
@@ -111,7 +111,7 @@ class SentimentLexical(SentimentBase):
                     if x['counttoken_total'] > 0 else 1,  # Avoid division by zero
                     axis=1
                 )
-                self.logger.debug(f"Sentiment scores generated using 'alt' method, mean: {df_count['sentiment'].mean():.2f}")
+                self.logger.debug(f"Sentiment scores generated using 'allwords' method, mean: {df_count['sentiment'].mean():.2f}")
             
             else:
                 self.logger.warning(f"Unknown aggregation method: {method}, no sentiment score calculated")
@@ -122,7 +122,7 @@ class SentimentLexical(SentimentBase):
             self.logger.error(f"Error in sentiment aggregation: {e}")
             raise
 
-    def sentiment_pipeline(self, dictionary_name: str, method: str = 'pos', text_column: str = None) -> pd.DataFrame:
+    def sentiment_pipeline(self, dictionary_name: str, method: str = 'posneg', text_column: str = None) -> pd.DataFrame:
         active_text_column = text_column if text_column is not None else self.text_column
         self.logger.info(f"Starting sentiment pipeline with dictionary '{dictionary_name}' and method '{method}'")
         try:

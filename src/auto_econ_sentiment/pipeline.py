@@ -155,7 +155,7 @@ if __name__ == "__main__":
         analyzer.run(
             clean_config={"clean_html": True, "clean_numbers_percentages": True, "remove_headers": []},
             dictionaries=["correa", "hubert", "lm", "hiv"],
-            aggregation_methods=["pos", "alt"],
+            aggregation_methods=["posneg", "allwords"],
             lexical_text_columns=["text"],
             export_results=True,
         )
