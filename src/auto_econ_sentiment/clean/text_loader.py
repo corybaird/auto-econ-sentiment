@@ -13,8 +13,10 @@ class TextLoader:
             df = pd.read_csv(self.file_path)
         elif self.file_path.endswith(".xlsx") or self.file_path.endswith(".xls"):
             df = pd.read_excel(self.file_path)
+        elif self.file_path.endswith(".parquet") or self.file_path.endswith(".parquet.gzip") or self.file_path.endswith(".parquet.gz"):
+            df = pd.read_parquet(self.file_path)
         else:
-            raise ValueError("Unsupported file format. Please use CSV or Excel files.")
+            raise ValueError("Unsupported file format. Please use CSV, Excel, or Parquet files.")
 
         if self.text_column not in df.columns:
             raise ValueError(f"Text column '{self.text_column}' not found in the file.")
