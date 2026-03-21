@@ -153,7 +153,7 @@ if __name__ == "__main__":
             import_file_path=csv_path,
             text_column="text",
             date_column="date",
-            export_path="data/autoecon/test",
+            export_path="data/sentiment/basic_tests",
         )
         analyzer.run(
             clean_config={"clean_html": True, "clean_numbers_percentages": True, "remove_headers": []},
