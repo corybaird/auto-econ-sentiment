@@ -8,11 +8,13 @@ A streamlined, production-ready pipeline for extracting and analyzing economic s
 ## Features
 
 - **Robust Data Cleaning**: Automatically handles HTML, unicode normalization, special character encodings, percent fixes, header/footer stripping, tokenization and stemming.
-- **Lexical Sentiment Execution**: Computes word-level and sentence-level sentiment counts and aggregates (methods: `posneg`, `allwords`) across multiple dictionaries:
+- **Lexical Sentiment Analysis**: Computes document-level sentiment counts and aggregates (methods: `posneg`, `allwords`) across multiple dictionaries:
   - Correa (Financial Stability)
   - Hubert (Central Bank Tone)
   - Loughran-McDonald (LM)
   - General Inquirer (HIV)
+  - Apel-Blix-Nordstrom (AP, stemmed)
+  - Banerjee-Nikolova (BN, stemmed)
 - **Pipeline Orchestration**: Simplified 1-file pipeline orchestrator (`AutoEconSentiment`) managed by YAML configuration.
 
 ## Installation
@@ -30,7 +32,7 @@ uv sync
 You can verify the pipeline functionality using built-in synthetic test data:
 
 ```bash
-uv run python -m auto_econ_sentiment.pipeline --test
+uv run python -m src.auto_econ_sentiment.pipeline --test
 ```
 
 Or execute the unit test suite with `pytest`:
@@ -44,7 +46,7 @@ uv run pytest
 Configure your data inputs, cleaning rules, and target dictionaries in `params.yaml`, then run the entire analysis pipeline:
 
 ```bash
-uv run python -m auto_econ_sentiment.pipeline
+uv run python -m src.auto_econ_sentiment.pipeline
 ```
 
 ### 3. Usage from Python
@@ -53,7 +55,7 @@ uv run python -m auto_econ_sentiment.pipeline
 from auto_econ_sentiment.pipeline import AutoEconSentiment
 
 analyzer = AutoEconSentiment(
-    import_file_path="data/raw/monetary_policy_statement_mostrecent.csv",
+    import_file_path="data/raw/monetary_policy_statement.parquet.gzip",
     text_column="text",
     date_column="date",
     export_path="data/sentiment/"
@@ -83,3 +85,5 @@ df_sent_lexical = analyzer.analyze_sentiment_lexical(
 - **General Inquirer (HIV)**: 
   - Stone, Philip J., Dexter C. Dunphy, and Marshall S. Smith. "The general inquirer: A computer approach to content analysis." (1966).
   - Lasswell, Harold Dwight, and Nathan Constantin Leites. "Language of politics: Studies in quantitative semantics." (1966).
+- **Apel-Blix Grimaldi (AP)**: Apel, M. and M. Blix Grimaldi (2014). How Informative Are Central Bank Minutes? *Review of Economics* 65(1), 53-76.
+- **Bennani-Neuenkirch (BN)**: Bennani, H. and M. Neuenkirch (2017). The (Home) Bias of European Central Bankers: New Evidence Based on Speeches. *Applied Economics* 49(11), 1114-1131.
