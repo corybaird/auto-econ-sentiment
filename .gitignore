@@ -1,3 +1,6 @@
+data/processed/
+data/raw/speeches/
+
 .idea/
 .DS_Store
 archive/
