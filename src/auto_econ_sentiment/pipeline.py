@@ -23,7 +23,6 @@ class AutoEconSentiment:
         os.makedirs(self.export_path, exist_ok=True)
         self.df_raw = None
         self.df_clean = None
-        self.df_sentences = None
         self.df_sent_lexical = None
         logger.info("AutoEconSentiment initialized successfully")
 
@@ -50,10 +49,7 @@ class AutoEconSentiment:
             clean_config=clean_config,
         )
         self.df_clean = cleaner.run()
-        cleaner.process_sentences()
-        self.df_sentences = cleaner.df_sentences
-        logger.info(f"Data cleaned successfully. Shape: {self.df_clean.shape}")
-        return self.df_clean, self.df_sentences
+        return self.df_clean
 
     def analyze_sentiment_lexical(self, dictionaries, aggregation_methods):
         logger.info("Analyzing sentiment using lexical methods...")
@@ -130,7 +126,7 @@ class AutoEconSentiment:
                 logger.info(f"ALL sentiment results exported to: {self.export_path}/sentiment_all_results.csv")
 
         logger.info("AutoEconSentiment pipeline finished.")
-        return self.df_raw, self.df_clean, self.df_sentences, self.df_sent_lexical
+        return self.df_raw, self.df_clean, self.df_sent_lexical
 
 
 if __name__ == "__main__":
