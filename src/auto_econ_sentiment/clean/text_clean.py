@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 from html.parser import HTMLParser
 import pandas as pd
-import spacy
 import unicodedata
 import html
 import logging
@@ -65,8 +64,6 @@ class TextCleaner:
             'header_patterns': [],
             'footer_patterns': [],
             'remove_headers': [],
-            'min_sentence_length': 10,
-            'max_sentence_length': 1000,
             'tokenize': False,
             'stem': False,
         }
@@ -77,15 +74,6 @@ class TextCleaner:
         if 'remove_headers' in self.clean_config and self.clean_config['remove_headers']:
             if not self.clean_config.get('header_patterns'):
                 self.clean_config['header_patterns'] = self.clean_config['remove_headers']
-
-        self._load_spacy_model()
-
-    def _load_spacy_model(self):
-        try:
-            self.nlp = spacy.load("en_core_web_sm")
-        except OSError:
-            logging.warning("spaCy model not found. Falling back to NLTK.")
-            self.nlp = None
 
     @staticmethod
     def clean_html(text):
@@ -269,59 +257,6 @@ class TextCleaner:
             logging.error(f"Error in clean_text: {e}")
             return str(text)
 
-    def _sentence_tokenize(self, text):
-        try:
-            if not text.strip():
-                return []
-
-            if self.nlp:
-                doc = self.nlp(text)
-                sentences = [sent.text.strip() for sent in doc.sents]
-            else:
-                try:
-                    from nltk.tokenize import sent_tokenize
-                    sentences = sent_tokenize(text)
-                except ImportError:
-                    sentences = self._fallback_sentence_split(text)
-
-            min_len = self.clean_config.get('min_sentence_length', 10)
-            max_len = self.clean_config.get('max_sentence_length', 1000)
-            
-            filtered_sentences = []
-            for sent in sentences:
-                sent = re.sub(r"\n+", "", sent).strip()
-                if min_len <= len(sent) <= max_len:
-                    sent = re.sub(r'\s+', ' ', sent)
-                    if sent and not re.match(r'^[^\w]*$', sent):
-                        filtered_sentences.append(sent)
-            
-            return filtered_sentences
-        except Exception as e:
-            logging.error(f"Error in sentence tokenization: {e}")
-            return [text]
-
-    def _fallback_sentence_split(self, text):
-        abbreviations = {
-            'Mr.', 'Mrs.', 'Ms.', 'Dr.', 'Prof.', 'Sr.', 'Jr.', 'vs.',
-            'etc.', 'e.g.', 'i.e.', 'cf.', 'al.', 'Inc.', 'Ltd.', 'Corp.',
-            'Co.', 'U.S.', 'U.K.', 'E.U.', 'N.Y.', 'L.A.', 'D.C.',
-            'Jan.', 'Feb.', 'Mar.', 'Apr.', 'Jun.', 'Jul.', 'Aug.',
-            'Sep.', 'Oct.', 'Nov.', 'Dec.'
-        }
-        
-        for abbr in abbreviations:
-            text = text.replace(abbr, abbr.replace('.', '<PERIOD>'))
-        
-        sentences = re.split(r'[.!?]+\s+', text)
-        
-        processed_sentences = []
-        for sentence in sentences:
-            sentence = sentence.replace('<PERIOD>', '.')
-            if sentence.strip():
-                processed_sentences.append(sentence.strip())
-        
-        return processed_sentences
-
     def process_text(self):
         try:
             logging.info("Starting text processing")
@@ -357,32 +292,10 @@ class TextCleaner:
                     self.df['text_stems'] = self.df['text_tokens'].apply(self.stem_tokens)
                 logging.info("Stemming completed")
             
-            logging.info("Starting sentence tokenization")
-            try:
-                tqdm.pandas(desc="Tokenizing sentences", position=0, leave=True)
-                self.df['text_sentences'] = self.df['text_clean'].progress_apply(self._sentence_tokenize)
-            except ImportError:
-                self.df['text_sentences'] = self.df['text_clean'].apply(self._sentence_tokenize)
-            logging.info("Sentence tokenization completed")
-            
             return self.df
             
         except Exception as e:
             logging.error(f"Error in process_text: {e}")
-            raise
-
-    def process_sentences(self):
-        try:
-            logging.info("Processing sentences")
-            self.df = self.df.assign(text_sentence=self.df['text_sentences'])
-            df_sentences = self.df.explode('text_sentence')
-            df_sentences['id_sentence'] = df_sentences.groupby(['id_text']).cumcount() + 1
-            df_sentences['id_textsent'] = df_sentences.apply(lambda col: f"{col['id_text']}_{col['id_sentence']}", axis=1)
-            df_sentences['len_sent'] = df_sentences.text_sentence.apply(len)
-            self.df_sentences = df_sentences.copy().drop(['Unnamed: 0'], errors='ignore', axis=1)
-            logging.info("Sentence processing completed")
-        except Exception as e:
-            logging.error(f"Error in process_sentences: {e}")
             raise
 
     def export_data(self):
@@ -393,8 +306,7 @@ class TextCleaner:
                 output_dir.mkdir(parents=True, exist_ok=True)
 
                 self.df.to_parquet(output_dir / 'cleaned.parquet.gzip', compression='gzip', index=False)
-                self.df_sentences.drop(['text','text_sentences', 'text_clean', 'event','title','speaker','text_len','text_tokens', 'text_stems'], axis=1, errors='ignore').to_parquet(output_dir / 'cleaned_sentences.parquet.gzip', compression='gzip', index=False)
-                return (output_dir / 'cleaned.parquet.gzip', output_dir / 'cleaned_sentences.parquet.gzip',)
+                return (output_dir / 'cleaned.parquet.gzip',)
             else:
                 logging.info("Export path not specified. Data will not be exported.")
                 return None
@@ -414,8 +326,7 @@ class TextCleaner:
             logging.info("Running process_text()")
             df_text = self.process_text()
 
-            logging.info("Running process_sentences()")
-            self.process_sentences()
+
 
             if self.export_path:
                 logging.info("Running export_data()")
