@@ -25,7 +25,6 @@ dependencies = [
     "pyyaml>=6.0,<7",
     "scikit-learn>=1.5.2,<2",
     "seaborn>=0.13.2",
-    "spacy>=3.8.2,<4",
     "tqdm>=4.0.0,<5",
 ]
 
@@ -54,9 +53,6 @@ Homepage = "https://github.com/corybaird/auto-econ-sentiment"
 Repository = "https://github.com/corybaird/auto-econ-sentiment"
 Changelog = "https://github.com/corybaird/auto-econ-sentiment/blob/main/CHANGELOG.md"
 "Bug Tracker" = "https://github.com/corybaird/auto-econ-sentiment/issues"
-
-[tool.uv.sources]
-en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0.tar.gz" }
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

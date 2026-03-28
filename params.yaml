@@ -1,12 +1,12 @@
 # 1. SECTION 1: SENTIMENT
 # src/auto_econ_sentiment/pipeline.py
 input:
-  file_path: "data/raw/monetary_policy_statement_mostrecent.csv"
+  file_path: "data/raw/basic_tests/monetary_policy_statement.parquet.gzip"
   text_column: text
   date_column: date
 
 output:
-  export_path: data/sentiment/
+  export_path: data/sentiment/basic_tests/
   export_results: true
 
 models:

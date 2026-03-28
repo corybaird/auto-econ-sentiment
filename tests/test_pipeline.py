@@ -76,7 +76,7 @@ def test_loader_missing_column(tmp_path):
 
 
 def test_loader_unsupported_format(tmp_path):
-    bad_file = tmp_path / "data.parquet"
+    bad_file = tmp_path / "data.jsonl"
     bad_file.write_text("not real")
     with pytest.raises(ValueError, match="Unsupported file format"):
         TextLoader(file_path=str(bad_file), text_column="text", date_column="date")
@@ -146,14 +146,6 @@ def test_cleaner_stem_fomc():
     assert len(stems) > 0
 
 
-def test_cleaner_sentence_tokenization_fomc():
-    df = _df(FOMC_JULY_2024)
-    cleaner = TextCleaner(df=df, text_column="text", clean_config={"tokenize": False, "stem": False})
-    cleaner.run()
-    cleaner.process_sentences()
-    assert cleaner.df_sentences is not None
-    # July 2024 statement has ~6 sentences
-    assert len(cleaner.df_sentences) >= 4
 
 
 def test_cleaner_percentage_normalization():

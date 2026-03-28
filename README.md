@@ -3,19 +3,13 @@
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-A streamlined, production-ready pipeline for extracting and analyzing economic sentiment from textual data. Focused on high-performance lexical sentiment analysis using established financial dictionaries.
+A streamlined, production-ready pipeline for extracting and analyzing economic sentiment from textual data — focused on high-performance lexical sentiment analysis using established central bank and financial dictionaries.
 
-## Features
+---
 
-- **Robust Data Cleaning**: Automatically handles HTML, unicode normalization, special character encodings, percent fixes, header/footer stripping, tokenization and stemming.
-- **Lexical Sentiment Execution**: Computes word-level and sentence-level sentiment counts and aggregates (methods: `posneg`, `allwords`) across multiple dictionaries:
-  - Correa (Financial Stability)
-  - Hubert (Central Bank Tone)
-  - Loughran-McDonald (LM)
-  - General Inquirer (HIV)
-- **Pipeline Orchestration**: Simplified 1-file pipeline orchestrator (`AutoEconSentiment`) managed by YAML configuration.
+## Q. Quick Start
 
-## Installation
+### Q.1 Install
 
 Ensure you have `uv` installed, then synchronize the environment:
 
@@ -23,63 +17,185 @@ Ensure you have `uv` installed, then synchronize the environment:
 uv sync
 ```
 
-## Quick Start
-
-### 1. Run Tests & Synthetic Data
-
-You can verify the pipeline functionality using built-in synthetic test data:
-
-```bash
-uv run python -m auto_econ_sentiment.pipeline --test
-```
-
-Or execute the unit test suite with `pytest`:
-
-```bash
-uv run pytest
-```
-
-### 2. Run Pipeline from YAML
-
-Configure your data inputs, cleaning rules, and target dictionaries in `params.yaml`, then run the entire analysis pipeline:
-
-```bash
-uv run python -m auto_econ_sentiment.pipeline
-```
-
-### 3. Usage from Python
+### Q.2 Run on Your Own Data (Python API)
 
 ```python
 from auto_econ_sentiment.pipeline import AutoEconSentiment
 
 analyzer = AutoEconSentiment(
-    import_file_path="data/raw/monetary_policy_statement_mostrecent.csv",
+    import_file_path="data/raw/basic_tests/monetary_policy_statement.parquet.gzip",
     text_column="text",
     date_column="date",
-    export_path="data/sentiment/"
+    export_path="data/sentiment/basic_tests/"
 )
-analyzer.load_data()
-analyzer.clean_data(clean_config={"tokenize": True, "stem": True})
-
-df_sent_lexical = analyzer.analyze_sentiment_lexical(
-    dictionaries={"unstemmed": ["correa", "hubert", "lm", "hiv"], "stemmed": ["ap"]},
-    aggregation_methods=["posneg", "allwords"]
+analyzer.run(
+    clean_config={"tokenize": True, "stem": True},
+    dictionaries={"unstemmed": ["correa", "hubert", "lm", "hiv"], "stemmed": ["ap", "bn"]},
+    aggregation_methods=["posneg", "allwords"],
+    export_results=True
 )
 ```
 
-## Pipeline Components
+### Q.3 Run from YAML Config
 
-- **Clean & Load**: `src.clean.text_loader`, `src.clean.text_clean`
-- **Sentiment Models**: `src.models.sentiment_lexical`, `src.models.modules.sentiment_lexical_gpt`
-- **Main Entrypoint**: `src/auto_econ_sentiment/pipeline.py`
+Configure inputs, cleaning rules, and dictionaries in `params.yaml`, then run:
 
+```bash
+uv run python -m src.auto_econ_sentiment.pipeline
+```
 
-## Citations
+### Q.4 Run the CBS Speeches Demo
+
+Download ~35K central bank speeches and run sentiment analysis across all 143 central banks:
+
+```bash
+# 1. Download the CBS dataset and split by central bank
+uv run python -m src.data.download_cb_speeches
+
+# 2. Run the sentiment pipeline over all banks
+uv run python -m src.data.run_cb_speeches
+```
+
+Then open `notebooks/demo_cb_speechs.ipynb` to explore the results interactively.
+
+---
+
+## 1. Features
+
+- **Robust Text Cleaning**: Handles HTML stripping, unicode normalization, special character encodings, percent/number normalization, configurable header removal, tokenization, and Porter stemming.
+- **Lexical Sentiment Analysis**: Computes document-level positive/negative word counts and sentiment scores across 6 established dictionaries with 2 aggregation methods (`posneg`, `allwords`).
+- **YAML-Driven Configuration**: All pipeline parameters (input paths, cleaning rules, dictionaries) are managed through `params.yaml` — no hard-coded values.
+- **CBS Speeches Demo**: End-to-end demonstration on 35K central bank speeches from 143 countries (1986-2023).
+
+---
+
+## 2. Data
+
+### 2.1 Input Data (`data/raw/`)
+
+Contains immutable, original input data. Never modified directly.
+
+| Path | Description |
+|------|-------------|
+| `data/raw/basic_tests/monetary_policy_statement.parquet.gzip` | FOMC monetary policy statements. Used as the primary test and demo dataset for `params.yaml` and `--test` mode. Columns: `text`, `date`. |
+| `data/raw/basic_tests/statements_speeches.parquet.gzip` | A small mixed sample of central bank statements and speeches. Used for quick pipeline validation. |
+| `data/raw/speeches/CBNAME.parquet.gzip` | The full [CBS Central Bank Speeches Dataset](https://www.cbspeeches.com/) (~35K speeches, 143 central banks, 1986-2023), split into one file per central bank. Generated by `src/data/download_cb_speeches.py`. Columns: `URL`, `PDF`, `Title`, `Subtitle`, `Date`, `Authorname`, `Role`, `Gender`, `CentralBank`, `Country`, `text`, `text_original`, `Filename`, `Language`, `Source`. |
+
+### 2.2 Sentiment Outputs (`data/sentiment/`)
+
+Contains all outputs generated by the `AutoEconSentiment` pipeline.
+
+| Path | Description |
+|------|-------------|
+| `basic_tests/cleaned.parquet.gzip` | Cleaned and tokenized text from the basic test dataset. |
+| `basic_tests/sentiment_all_results.csv` | Combined sentiment results for the basic test dataset across all dictionaries and methods. |
+| `cb_speeches/CBNAME/cleaned.parquet.gzip` | Cleaned and tokenized speeches for each central bank. |
+| `cb_speeches/CBNAME/sentiment_all_results.csv` | Final sentiment scores per speech for each central bank, with columns for each `{dictionary}_{method}_sentiment` combination. |
+
+### 2.3 Configuration (`references/configs/`)
+
+| File | Description |
+|------|-------------|
+| `params.yaml` | Main pipeline configuration for the basic FOMC test dataset. |
+| `references/configs/params_cb_speeches.yaml` | Pipeline configuration for the CBS central bank speeches demo. |
+
+---
+
+## 3. Library Components (`src/auto_econ_sentiment/`)
+
+### 3.1 `pipeline.py` — Main Orchestrator
+
+The `AutoEconSentiment` class is the primary entry point. It orchestrates loading, cleaning, and sentiment analysis via its `run()` method. Accepts `import_file_path`, `text_column`, `date_column`, and `export_path`. Can also be invoked from the command line with `--test` for a built-in synthetic data run.
+
+### 3.2 `clean/text_loader.py` — Data Loader
+
+`TextLoader` handles loading input data from `csv`, `parquet`, and `parquet.gzip` formats. Validates that the required `text_column` and `date_column` are present and returns a clean copy of the DataFrame.
+
+### 3.3 `clean/text_clean.py` — Text Cleaner
+
+`TextCleaner` applies a configurable multi-step cleaning pipeline:
+- HTML stripping and unicode normalization
+- British-to-American English conversion (`clean/references/british_2_american.py`)
+- Number and percentage normalization
+- Configurable header/boilerplate removal
+- Word tokenization (splits text into token lists)
+- Porter stemming (reduces tokens to root forms for stemmed dictionaries)
+
+Cleaned text is assigned a unique `id_text` for downstream joining.
+
+### 3.4 `models/sentiment_lexical.py` — Lexical Sentiment Model
+
+`SentimentLexical` performs bag-of-words sentiment scoring against a vocabulary loaded from the master YAML dictionary (`data/lexical_master_dict.yaml`). For each dictionary, it counts positive and negative word occurrences and computes a sentiment score using one of two methods:
+- `posneg`: `1 + (pos - neg) / (pos + neg)` — normalized to the sentiment words only.
+- `allwords`: `1 + (pos - neg) / total_tokens` — normalized to all words in the document.
+
+### 3.5 `models/sentiment_base.py` — Abstract Base
+
+`SentimentBase` is the abstract base class for sentiment models, providing shared input DataFrame handling and the `text_column` interface.
+
+### 3.6 `data/lexical_master_dict.yaml` — Dictionary Definitions
+
+Master YAML file containing the positive/negative word lists for all 6 supported dictionaries: `hubert`, `lm`, `hiv`, `correa`, `bn`, `ap`.
+
+### 3.7 `exceptions.py` — Custom Exceptions
+
+Defines `DataLoadError` and `SentimentAnalysisError` for structured error handling throughout the pipeline.
+
+### 3.8 `utils/load_yaml.py` — YAML Config Loader
+
+`load_yaml_config()` loads and validates pipeline configuration from a YAML file using `yaml.safe_load()`.
+
+### 3.9 `utils/paths.py` — Path Utilities
+
+Shared path resolution helpers.
+
+### 3.10 `clean/text_viz.py` — Cleaning Visualizer
+
+Utilities for visualizing text before and after cleaning (for exploratory and debugging use).
+
+---
+
+## 4. Tests (`tests/`)
+
+The test suite is in `tests/test_pipeline.py` and covers the full pipeline from data loading to sentiment output. Run with:
+
+```bash
+uv run pytest
+```
+
+| Test | Description |
+|------|-------------|
+| `test_loader_synthetic_csv` | Verifies `TextLoader` correctly loads a synthetic CSV. |
+| `test_loader_missing_column` | Confirms an error is raised when required columns are absent. |
+| `test_loader_unsupported_format` | Confirms an error is raised for unsupported file types. |
+| `test_loader_returns_copy` | Verifies the loader returns a defensive copy. |
+| `test_cleaner_basic_run_on_fomc` | Runs `TextCleaner` on real FOMC data and validates output shape. |
+| `test_cleaner_header_removal` | Verifies boilerplate header strings are removed. |
+| `test_cleaner_tokenize_fomc` | Checks tokenized output is a non-empty list of strings. |
+| `test_cleaner_stem_fomc` | Confirms stemming reduces tokens to root forms. |
+| `test_cleaner_percentage_normalization` | Verifies percentages are normalized correctly. |
+| `test_cleaner_assigns_id_text` | Confirms each row receives a unique `id_text` identifier. |
+| `test_cleaner_missing_column` | Confirms a clear error when the text column is missing. |
+| `test_sentiment_hubert_posneg` | Runs Hubert dictionary with `posneg` method and checks score range. |
+| `test_sentiment_lm_posneg` | Runs LM dictionary with `posneg` method. |
+| `test_sentiment_correa_allwords` | Runs Correa dictionary with `allwords` method. |
+| `test_sentiment_text_column_override` | Verifies overriding the text column does not mutate the original DataFrame. |
+| `test_sentiment_unknown_dictionary` | Confirms a clear error for unknown dictionary names. |
+| `test_sentiment_word_counts_nonzero` | Verifies that matched sentiment word counts are > 0 on real data. |
+| `test_public_api_imports` | Confirms the public API imports correctly from the package. |
+| `test_version_is_string` | Verifies `__version__` is a valid string. |
+
+---
+
+## 5. Citations
 
 ### Lexical Dictionaries
+
 - **Loughran-McDonald (LM)**: Loughran, T. and B. Mcdonald (2011). When Is a Liability Not a Liability? Textual Analysis, Dictionaries, and 10-Ks. *The Journal of Finance* 66, 35–65.
 - **Correa**: Correa, R., K. Garud, J. Londono, and N. Mislang (2017). Sentiment in Central Bank as Financial Stability Reports. *Board of Governors of the Federal Reserve System Research Series*. International Finance Discussion Paper 1203.
 - **Hubert**: Hubert, P. and F. Labondance (2021). The signaling effects of central bank tone. *European Economic Review* 133, 103684.
-- **General Inquirer (HIV)**: 
+- **General Inquirer (HIV)**:
   - Stone, Philip J., Dexter C. Dunphy, and Marshall S. Smith. "The general inquirer: A computer approach to content analysis." (1966).
   - Lasswell, Harold Dwight, and Nathan Constantin Leites. "Language of politics: Studies in quantitative semantics." (1966).
+- **Apel-Blix Grimaldi (AP)**: Apel, M. and M. Blix Grimaldi (2014). How Informative Are Central Bank Minutes? *Review of Economics* 65(1), 53-76.
+- **Bennani-Neuenkirch (BN)**: Bennani, H. and M. Neuenkirch (2017). The (Home) Bias of European Central Bankers: New Evidence Based on Speeches. *Applied Economics* 49(11), 1114-1131.
