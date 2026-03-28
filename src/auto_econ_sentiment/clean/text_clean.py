@@ -8,17 +8,20 @@ import unicodedata
 import html
 import logging
 
-try: 
+try:
     import nltk
-    nltk.data.find('tokenizers/punkt_tab/english/')
+
+    nltk.data.find("tokenizers/punkt_tab/english/")
 except (LookupError, ImportError):
     try:
         import nltk
-        nltk.download('punkt_tab')
+
+        nltk.download("punkt_tab")
     except ImportError:
         pass
 from nltk.stem import PorterStemmer
-from nltk.tokenize import word_tokenize    
+from nltk.tokenize import word_tokenize
+
 
 class _HTMLStripper(HTMLParser):
     _SKIP_TAGS = {"script", "style", "head", "noscript"}
@@ -50,30 +53,35 @@ class TextCleaner:
             raise ValueError(f"Column '{text_column}' not found in DataFrame")
 
         self.df = df.copy()
-        self.df['id_text'] = range(1, df.shape[0] + 1)
+        self.df["id_text"] = range(1, df.shape[0] + 1)
         self.text_column = text_column
         self.export_path = export_path
         self.clean_config = {
-            'clean_html': True,
-            'clean_numbers_percentages': True,
-            'normalize_unicode': True,
-            'fix_encoding': True,
-            'normalize_whitespace': True,
-            'remove_extra_punctuation': True,
-            'standardize_quotes': True,
-            'header_patterns': [],
-            'footer_patterns': [],
-            'remove_headers': [],
-            'tokenize': False,
-            'stem': False,
+            "clean_html": True,
+            "clean_numbers_percentages": True,
+            "normalize_unicode": True,
+            "fix_encoding": True,
+            "normalize_whitespace": True,
+            "remove_extra_punctuation": True,
+            "standardize_quotes": True,
+            "header_patterns": [],
+            "footer_patterns": [],
+            "remove_headers": [],
+            "tokenize": False,
+            "stem": False,
         }
         self.stemmer = PorterStemmer()
         if clean_config:
             self.clean_config.update(clean_config)
 
-        if 'remove_headers' in self.clean_config and self.clean_config['remove_headers']:
-            if not self.clean_config.get('header_patterns'):
-                self.clean_config['header_patterns'] = self.clean_config['remove_headers']
+        if (
+            "remove_headers" in self.clean_config
+            and self.clean_config["remove_headers"]
+        ):
+            if not self.clean_config.get("header_patterns"):
+                self.clean_config["header_patterns"] = self.clean_config[
+                    "remove_headers"
+                ]
 
     @staticmethod
     def clean_html(text):
@@ -84,7 +92,7 @@ class TextCleaner:
     @staticmethod
     def clean_spaces_html(text):
         logging.debug("Cleaning HTML and spaces")
-        text = re.sub(r'<.*?>', '', text)
+        text = re.sub(r"<.*?>", "", text)
         text = re.sub(r"\s+", " ", text)
         text = re.sub(r"\n+", " ", text)
         text = text.strip()
@@ -92,17 +100,37 @@ class TextCleaner:
 
     @staticmethod
     def normalize_unicode(text):
-        text = unicodedata.normalize('NFKC', text)
-        text = re.sub(r'[^\x00-\x7F]+', lambda m: unicodedata.normalize('NFKD', m.group()).encode('ascii', 'ignore').decode('ascii'), text)
+        text = unicodedata.normalize("NFKC", text)
+        text = re.sub(
+            r"[^\x00-\x7F]+",
+            lambda m: unicodedata.normalize("NFKD", m.group())
+            .encode("ascii", "ignore")
+            .decode("ascii"),
+            text,
+        )
         return text
 
     @staticmethod
     def fix_encoding_issues(text):
         replacements = {
-            'â€™': "'", 'â€œ': '"', 'â€\x9d': '"', 'â€"': '–', 'â€"': '—',
-            'Ã¡': 'á', 'Ã©': 'é', 'Ã­': 'í', 'Ã³': 'ó', 'Ãº': 'ú',
-            'Ã ': 'à', 'Ã¨': 'è', 'Ã¬': 'ì', 'Ã²': 'ò', 'Ã¹': 'ù',
-            'Ã±': 'ñ', 'Ã§': 'ç', 'Â': '',
+            "â€™": "'",
+            "â€œ": '"',
+            "â€\x9d": '"',
+            'â€"': "–",
+            'â€"': "—",
+            "Ã¡": "á",
+            "Ã©": "é",
+            "Ã­": "í",
+            "Ã³": "ó",
+            "Ãº": "ú",
+            "Ã ": "à",
+            "Ã¨": "è",
+            "Ã¬": "ì",
+            "Ã²": "ò",
+            "Ã¹": "ù",
+            "Ã±": "ñ",
+            "Ã§": "ç",
+            "Â": "",
         }
         for old, new in replacements.items():
             text = text.replace(old, new)
@@ -110,14 +138,14 @@ class TextCleaner:
 
     @staticmethod
     def normalize_whitespace(text):
-        text = re.sub(r'\r\n|\r|\n', ' ', text)
-        text = re.sub(r'\s+', ' ', text)
-        text = re.sub(r'\s*([.!?])\s*', r'\1 ', text)
+        text = re.sub(r"\r\n|\r|\n", " ", text)
+        text = re.sub(r"\s+", " ", text)
+        text = re.sub(r"\s*([.!?])\s*", r"\1 ", text)
         return text.strip()
 
     @staticmethod
     def standardize_quotes(text):
-        text = re.sub(r'[''`]', "'", text)
+        text = re.sub(r"[" "`]", "'", text)
         text = re.sub(r'[""„"]', '"', text)
         return text
 
@@ -125,29 +153,38 @@ class TextCleaner:
     def clean_numbers_percentages(text):
         logging.debug("Cleaning numbers and percentages")
         replacements = {
-            '¼': '.25', '½': '.5', '¾': '.75',
-            '⅓': '.33', '⅔': '.67', '⅛': '.125',
-            '⅜': '.375', '⅝': '.625', '⅞': '.875',
-            '1/2': '.5', '3/4': '.75', '1/4': '.25',
-            '1/3': '.33', '2/3': '.67',
+            "¼": ".25",
+            "½": ".5",
+            "¾": ".75",
+            "⅓": ".33",
+            "⅔": ".67",
+            "⅛": ".125",
+            "⅜": ".375",
+            "⅝": ".625",
+            "⅞": ".875",
+            "1/2": ".5",
+            "3/4": ".75",
+            "1/4": ".25",
+            "1/3": ".33",
+            "2/3": ".67",
         }
         for old, new in replacements.items():
             text = text.replace(old, new)
-        
-        text = re.sub(r'percentage', '%', text)
-        text = re.sub(r'percent', '%', text)
-        text = re.sub(r'per cent', '%', text)
-        text = re.sub(r'(\d+)\s*%', r'\1%', text)
+
+        text = re.sub(r"percentage", "%", text)
+        text = re.sub(r"percent", "%", text)
+        text = re.sub(r"per cent", "%", text)
+        text = re.sub(r"(\d+)\s*%", r"\1%", text)
         return text.strip()
 
     @staticmethod
     def remove_extra_punctuation(text):
-        text = re.sub(r'[.]{2,}', '...', text)
-        text = re.sub(r'[!]{2,}', '!', text)
-        text = re.sub(r'[?]{2,}', '?', text)
-        text = re.sub(r'[,]{2,}', ',', text)
-        text = re.sub(r'[;]{2,}', ';', text)
-        text = re.sub(r'[-]{3,}', '---', text)
+        text = re.sub(r"[.]{2,}", "...", text)
+        text = re.sub(r"[!]{2,}", "!", text)
+        text = re.sub(r"[?]{2,}", "?", text)
+        text = re.sub(r"[,]{2,}", ",", text)
+        text = re.sub(r"[;]{2,}", ";", text)
+        text = re.sub(r"[-]{3,}", "---", text)
         return text
 
     def remove_header(self, text, patterns=None):
@@ -156,8 +193,13 @@ class TextCleaner:
             if patterns and isinstance(patterns, list) and len(patterns) > 0:
                 for pattern in patterns:
                     escaped_pattern = re.escape(pattern)
-                    if re.match(f'^{escaped_pattern}', text, re.IGNORECASE | re.DOTALL):
-                        text = re.sub(f'^{escaped_pattern}', '', text, flags=re.IGNORECASE | re.DOTALL).strip()
+                    if re.match(f"^{escaped_pattern}", text, re.IGNORECASE | re.DOTALL):
+                        text = re.sub(
+                            f"^{escaped_pattern}",
+                            "",
+                            text,
+                            flags=re.IGNORECASE | re.DOTALL,
+                        ).strip()
                         logging.debug(f"Removed header pattern: {pattern}")
                         break
             return text
@@ -171,26 +213,33 @@ class TextCleaner:
             if patterns and isinstance(patterns, list) and len(patterns) > 0:
                 for pattern in patterns:
                     escaped_pattern = re.escape(pattern)
-                    if re.search(f'{escaped_pattern}$', text, re.IGNORECASE | re.DOTALL):
-                        text = re.sub(f'{escaped_pattern}$', '', text, flags=re.IGNORECASE | re.DOTALL).strip()
+                    if re.search(
+                        f"{escaped_pattern}$", text, re.IGNORECASE | re.DOTALL
+                    ):
+                        text = re.sub(
+                            f"{escaped_pattern}$",
+                            "",
+                            text,
+                            flags=re.IGNORECASE | re.DOTALL,
+                        ).strip()
                         logging.debug(f"Removed footer pattern: {pattern}")
                         break
             return text
         except Exception as e:
             logging.error(f"Error in remove_footer: {e}")
             return text
-    
+
     # New methods to add to the class
     def tokenize_text(self, text):
         try:
             if not isinstance(text, str) or not text.strip():
                 return []
-            
+
             try:
                 tokens = word_tokenize(text.lower())
             except ImportError:
-                tokens = re.findall(r'\b\w+\b', text.lower())
-            
+                tokens = re.findall(r"\b\w+\b", text.lower())
+
             tokens = [token for token in tokens if token.isalpha()]
             return tokens
         except Exception as e:
@@ -199,7 +248,7 @@ class TextCleaner:
 
     def stem_tokens(self, tokens):
         try:
-            if not tokens or not hasattr(self, 'stemmer'):
+            if not tokens or not hasattr(self, "stemmer"):
                 return tokens
             stems = [self.stemmer.stem(token) for token in tokens]
             stems = " ".join(stems)
@@ -212,47 +261,55 @@ class TextCleaner:
         try:
             if not isinstance(text, str):
                 text = str(text)
-            
+
             if not text.strip():
                 return ""
 
             logging.debug("Starting text cleaning")
             original_length = len(text)
 
-            if self.clean_config.get('fix_encoding', True):
+            if self.clean_config.get("fix_encoding", True):
                 text = self.fix_encoding_issues(text)
 
-            if self.clean_config.get('normalize_unicode', True):
+            if self.clean_config.get("normalize_unicode", True):
                 text = self.normalize_unicode(text)
 
-            if clean_spaces_html and self.clean_config.get('clean_html', True):
+            if clean_spaces_html and self.clean_config.get("clean_html", True):
                 text = self.clean_spaces_html(text)
 
-            if self.clean_config.get('standardize_quotes', True):
+            if self.clean_config.get("standardize_quotes", True):
                 text = self.standardize_quotes(text)
 
-            if clean_numbers_percentages and self.clean_config.get('clean_numbers_percentages', True):
+            if clean_numbers_percentages and self.clean_config.get(
+                "clean_numbers_percentages", True
+            ):
                 text = self.clean_numbers_percentages(text)
 
-            if self.clean_config.get('remove_extra_punctuation', True):
+            if self.clean_config.get("remove_extra_punctuation", True):
                 text = self.remove_extra_punctuation(text)
 
-            if self.clean_config.get('normalize_whitespace', True):
+            if self.clean_config.get("normalize_whitespace", True):
                 text = self.normalize_whitespace(text)
 
-            header_patterns = self.clean_config.get('header_patterns', [])
+            header_patterns = self.clean_config.get("header_patterns", [])
             if len(header_patterns) > 0:
-                logging.debug(f"Applying header removal with {len(header_patterns)} patterns")
+                logging.debug(
+                    f"Applying header removal with {len(header_patterns)} patterns"
+                )
                 text = self.remove_header(text, patterns=header_patterns)
-            
-            footer_patterns = self.clean_config.get('footer_patterns', [])
+
+            footer_patterns = self.clean_config.get("footer_patterns", [])
             if len(footer_patterns) > 0:
-                logging.debug(f"Applying footer removal with {len(footer_patterns)} patterns")
+                logging.debug(
+                    f"Applying footer removal with {len(footer_patterns)} patterns"
+                )
                 text = self.remove_footer(text, patterns=footer_patterns)
 
-            logging.debug(f"Text cleaning complete. Length: {original_length} -> {len(text)}")
+            logging.debug(
+                f"Text cleaning complete. Length: {original_length} -> {len(text)}"
+            )
             return text.strip()
-            
+
         except Exception as e:
             logging.error(f"Error in clean_text: {e}")
             return str(text)
@@ -261,39 +318,51 @@ class TextCleaner:
         try:
             logging.info("Starting text processing")
             logging.info(f"Processing {len(self.df)} rows")
-            
-            self.df['text_clean'] = self.df[self.text_column].apply(
+
+            self.df["text_clean"] = self.df[self.text_column].apply(
                 lambda x: self.clean_text(
                     str(x),
-                    clean_spaces_html=self.clean_config.get('clean_html', True),
-                    clean_numbers_percentages=self.clean_config.get('clean_numbers_percentages', True)
+                    clean_spaces_html=self.clean_config.get("clean_html", True),
+                    clean_numbers_percentages=self.clean_config.get(
+                        "clean_numbers_percentages", True
+                    ),
                 )
             )
             logging.info("Text cleaning completed")
-            
+
             # Tokenization
-            if self.clean_config.get('tokenize', False):
+            if self.clean_config.get("tokenize", False):
                 logging.info("Starting tokenization")
                 try:
                     tqdm.pandas(desc="Tokenizing text", position=0, leave=True)
-                    self.df['text_tokens'] = self.df['text_clean'].progress_apply(self.tokenize_text)
-                    self.df['text_tokens_str'] = self.df['text_tokens'].apply(lambda token_list: " ".join(token_list))
+                    self.df["text_tokens"] = self.df["text_clean"].progress_apply(
+                        self.tokenize_text
+                    )
+                    self.df["text_tokens_str"] = self.df["text_tokens"].apply(
+                        lambda token_list: " ".join(token_list)
+                    )
                 except ImportError:
-                    self.df['text_tokens'] = self.df['text_clean'].apply(self.tokenize_text)
+                    self.df["text_tokens"] = self.df["text_clean"].apply(
+                        self.tokenize_text
+                    )
                 logging.info("Tokenization completed")
 
             # Stemming
-            if self.clean_config.get('stem', False):
+            if self.clean_config.get("stem", False):
                 logging.info("Starting stemming")
                 try:
                     tqdm.pandas(desc="Stemming tokens", position=0, leave=True)
-                    self.df['text_stems'] = self.df['text_tokens'].progress_apply(self.stem_tokens)
+                    self.df["text_stems"] = self.df["text_tokens"].progress_apply(
+                        self.stem_tokens
+                    )
                 except ImportError:
-                    self.df['text_stems'] = self.df['text_tokens'].apply(self.stem_tokens)
+                    self.df["text_stems"] = self.df["text_tokens"].apply(
+                        self.stem_tokens
+                    )
                 logging.info("Stemming completed")
-            
+
             return self.df
-            
+
         except Exception as e:
             logging.error(f"Error in process_text: {e}")
             raise
@@ -305,8 +374,10 @@ class TextCleaner:
                 output_dir = Path(self.export_path)
                 output_dir.mkdir(parents=True, exist_ok=True)
 
-                self.df.to_parquet(output_dir / 'cleaned.parquet.gzip', compression='gzip', index=False)
-                return (output_dir / 'cleaned.parquet.gzip',)
+                self.df.to_parquet(
+                    output_dir / "cleaned.parquet.gzip", compression="gzip", index=False
+                )
+                return (output_dir / "cleaned.parquet.gzip",)
             else:
                 logging.info("Export path not specified. Data will not be exported.")
                 return None
@@ -319,14 +390,14 @@ class TextCleaner:
             logging.info("Starting TextCleaner.run()")
             if clean_config:
                 self.clean_config.update(clean_config)
-                if 'remove_headers' in clean_config and clean_config['remove_headers']:
-                    if not self.clean_config.get('header_patterns'):
-                        self.clean_config['header_patterns'] = clean_config['remove_headers']
+                if "remove_headers" in clean_config and clean_config["remove_headers"]:
+                    if not self.clean_config.get("header_patterns"):
+                        self.clean_config["header_patterns"] = clean_config[
+                            "remove_headers"
+                        ]
 
             logging.info("Running process_text()")
-            df_text = self.process_text()
-
-
+            self.process_text()
 
             if self.export_path:
                 logging.info("Running export_data()")
@@ -335,8 +406,8 @@ class TextCleaner:
                     logging.info(f"Data exported to: {export_paths}")
 
             logging.info("TextCleaner.run() completed successfully")
-            return df_text
-            
+            return self.df
+
         except Exception as e:
             logging.error(f"Error in TextCleaner.run(): {e}")
             raise

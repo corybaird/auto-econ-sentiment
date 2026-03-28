@@ -1,4 +1,5 @@
 import logging
+import re
 import urllib.request
 from pathlib import Path
 
@@ -13,14 +14,12 @@ DROPBOX_URL = (
 )
 
 RAW_CSV_PATH = Path("data/raw/cb_speeches.csv")
-RAW_PARQUET_PATH = Path("data/raw/cb_speeches.parquet.gzip")
 
 
 class CBSpeechesDownloader:
-    def __init__(self, url=DROPBOX_URL, csv_path=RAW_CSV_PATH, parquet_path=RAW_PARQUET_PATH):
+    def __init__(self, url=DROPBOX_URL, csv_path=RAW_CSV_PATH):
         self.url = url
         self.csv_path = csv_path
-        self.parquet_path = parquet_path
 
     def download_csv(self):
         self.csv_path.parent.mkdir(parents=True, exist_ok=True)
@@ -35,16 +34,18 @@ class CBSpeechesDownloader:
         logger.info(f"Reading CSV from {self.csv_path}...")
         df = pd.read_csv(self.csv_path, low_memory=False)
         logger.info(f"Loaded {len(df)} rows, {len(df.columns)} columns")
-        
+
         speeches_dir = Path("data/raw/speeches")
         speeches_dir.mkdir(parents=True, exist_ok=True)
-        
-        for cb, group in df.groupby('CentralBank'):
-            clean_name = str(cb).replace('/', '_').replace('\\', '_').replace(' ', '_')
+
+        for cb, group in df.groupby("CentralBank"):
+            clean_name = re.sub(r"[<>:\"/\\|?*\s]+", "_", str(cb)).strip("_.").lower()
             out_file = speeches_dir / f"{clean_name}.parquet.gzip"
             group.to_parquet(str(out_file), compression="gzip", index=False)
-            
-        logger.info(f"Saved {df['CentralBank'].nunique()} individual central bank files to {speeches_dir}")
+
+        logger.info(
+            f"Saved {df['CentralBank'].nunique()} individual central bank files to {speeches_dir}"
+        )
 
     def run(self):
         self.download_csv()
