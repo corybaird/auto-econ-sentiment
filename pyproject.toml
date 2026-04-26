@@ -1,10 +1,11 @@
 [project]
 name = "auto-econ-sentiment"
-version = "0.1.0"
+version = "0.1.1"
 description = "Lexical sentiment analysis pipeline for central bank and economic text data."
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
+authors = [{ name = "Cory Baird", email = "open.empirical.macro@gmail.com" }]
 keywords = ["sentiment", "nlp", "economics", "central-bank", "finance"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -18,13 +19,13 @@ classifiers = [
     "Topic :: Text Processing :: Linguistic",
 ]
 dependencies = [
-    "matplotlib>=3.10.8",
+    "matplotlib>=3.10.8,<4",
     "nltk>=3.9.1,<4",
     "pandas>=2.2.3,<3",
     "pyarrow>=19.0.0,<20",
     "pyyaml>=6.0,<7",
     "scikit-learn>=1.5.2,<2",
-    "seaborn>=0.13.2",
+    "seaborn>=0.13.2,<1",
     "tqdm>=4.0.0,<5",
 ]
 
@@ -71,14 +72,6 @@ include = [
 exclude = [
     "/src/auto_econ_sentiment/data/*.csv",
     "/src/auto_econ_sentiment/data/*.xlsx",
-]
-
-# Ensure non-python data files inside the package are bundled into the wheel
-[tool.hatch.build.targets.wheel.shared-data]
-
-[dependency-groups]
-dev = [
-    "pytest>=9.0.2",
 ]
 
 [build-system]

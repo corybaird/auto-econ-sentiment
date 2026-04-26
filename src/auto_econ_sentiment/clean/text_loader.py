@@ -1,12 +1,22 @@
+from pathlib import Path
+from typing import Optional, Tuple, Union
 import pandas as pd
 
 
 class TextLoader:
-    def __init__(self, file_path, text_column, date_column):
-        self.file_path = file_path
+    """Load a CSV/Excel/Parquet corpus, validate the requested columns, and
+    standardize them to ``text`` and ``date`` (parsed to datetime)."""
+
+    def __init__(
+        self,
+        file_path: Union[str, Path],
+        text_column: str,
+        date_column: str,
+    ) -> None:
+        self.file_path = str(file_path)
         self.text_column = text_column
         self.date_column = date_column
-        self.data = self._load_and_process()
+        self.data: pd.DataFrame = self._load_and_process()
 
     def _load_and_process(self):
         if self.file_path.endswith(".csv"):
@@ -31,10 +41,15 @@ class TextLoader:
         df = df.rename(columns={self.text_column: "text", self.date_column: "date"})
         return df
 
-    def get_data(self):
+    def get_data(self) -> pd.DataFrame:
+        """Return a defensive copy of the normalized DataFrame."""
         return self.data.copy()
 
-    def get_summary_stats(self, group_by_column):
+    def get_summary_stats(
+        self, group_by_column: str
+    ) -> Optional[Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]]:
+        """Return ``(group_counts, text_stats, time_span, date_ranges)`` summarizing
+        the corpus by ``group_by_column``. Returns ``None`` if the data is empty."""
         if self.data.empty:
             return None
 

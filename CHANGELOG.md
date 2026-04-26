@@ -6,6 +6,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ---
 
+## [0.1.1] - 2026-04-26
+
+### Added
+- `authors` field in `pyproject.toml` so PyPI displays maintainer info correctly.
+- Docstrings and type hints on the public API (`AutoEconSentiment`, `SentimentLexical`, `TextLoader`, `TextCleaner`) so the existing `py.typed` marker is fully usable downstream.
+
+### Changed
+- Tightened upper bounds on `matplotlib` (`<4`) and `seaborn` (`<1`) to match the `viz` extra and prevent surprise major-version breaks.
+- Removed redundant `[dependency-groups]` block and empty `[tool.hatch.build.targets.wheel.shared-data]` table from `pyproject.toml`.
+
+---
+
 ## [0.1.0] - 2026-03-04
 
 ### Added

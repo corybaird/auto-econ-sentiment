@@ -1,12 +1,26 @@
 import yaml
 import pandas as pd
+from typing import Optional
 from sklearn.feature_extraction.text import CountVectorizer
 from auto_econ_sentiment.models.sentiment_base import SentimentBase
 import os
 import logging
 
 class SentimentLexical(SentimentBase):
-    def __init__(self, df_input, text_column='text', dictionary_path=None, log_level=logging.WARNING):
+    """Lexical sentiment scorer that counts dictionary hits in a text column and
+    aggregates them into a per-document score.
+
+    Supported aggregations: ``"posneg"`` (positive vs. negative tone) and
+    ``"allwords"`` (positive minus negative, normalized by total tokens).
+    """
+
+    def __init__(
+        self,
+        df_input: pd.DataFrame,
+        text_column: str = 'text',
+        dictionary_path: Optional[str] = None,
+        log_level: int = logging.WARNING,
+    ) -> None:
         super().__init__(df_input, text_column)
         if dictionary_path is None:
             dictionary_path = os.path.join(os.path.dirname(__file__), "..", "data", "lexical_master_dict.yaml")
@@ -122,7 +136,15 @@ class SentimentLexical(SentimentBase):
             self.logger.error(f"Error in sentiment aggregation: {e}")
             raise
 
-    def sentiment_pipeline(self, dictionary_name: str, method: str = 'posneg', text_column: str = None) -> pd.DataFrame:
+    def sentiment_pipeline(
+        self,
+        dictionary_name: str,
+        method: str = 'posneg',
+        text_column: Optional[str] = None,
+    ) -> pd.DataFrame:
+        """Score ``text_column`` (or the configured default) against the named
+        dictionary and return the input DataFrame joined with the sentiment
+        columns, prefixed by ``dictionary_name`` and suffixed by ``method``."""
         active_text_column = text_column if text_column is not None else self.text_column
         self.logger.info(f"Starting sentiment pipeline with dictionary '{dictionary_name}' and method '{method}'")
         try:
@@ -137,7 +159,8 @@ class SentimentLexical(SentimentBase):
             self.logger.error(f"Pipeline execution failed: {e}")
             raise
 
-    def export_results(self, export_path: str, index: bool = False):
+    def export_results(self, export_path: str, index: bool = False) -> None:
+        """Write the most recent ``sentiment_pipeline`` result to ``export_path`` as CSV."""
         self.logger.info(f"Exporting results to {export_path}")
         try:
             if self.df_final is None:

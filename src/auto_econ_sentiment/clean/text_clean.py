@@ -3,6 +3,7 @@ import re
 import os
 from pathlib import Path
 from html.parser import HTMLParser
+from typing import Optional, Union
 import pandas as pd
 import unicodedata
 import html
@@ -48,7 +49,21 @@ class _HTMLStripper(HTMLParser):
 
 
 class TextCleaner:
-    def __init__(self, df, text_column, clean_config=None, export_path=None):
+    """Configurable text-normalization pipeline: HTML stripping, unicode and
+    encoding fixes, whitespace/punctuation tidy-up, optional header/footer
+    removal, optional NLTK tokenization and Porter stemming.
+
+    Pass ``clean_config`` to override any of the boolean flags or pattern lists
+    on the default configuration.
+    """
+
+    def __init__(
+        self,
+        df: pd.DataFrame,
+        text_column: str,
+        clean_config: Optional[dict] = None,
+        export_path: Optional[Union[str, Path]] = None,
+    ) -> None:
         if text_column not in df.columns:
             raise ValueError(f"Column '{text_column}' not found in DataFrame")
 
@@ -385,7 +400,12 @@ class TextCleaner:
             logging.error(f"Error in export_data: {e}")
             raise
 
-    def run(self, clean_config=None):
+    def run(self, clean_config: Optional[dict] = None) -> pd.DataFrame:
+        """Apply the configured cleaning steps and return the resulting DataFrame.
+
+        If ``export_path`` was supplied at construction time the cleaned data is
+        also written to a gzip-compressed Parquet file under that directory.
+        """
         try:
             logging.info("Starting TextCleaner.run()")
             if clean_config:

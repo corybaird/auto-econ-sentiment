@@ -359,7 +359,7 @@ wheels = [
 
 [[package]]
 name = "auto-econ-sentiment"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "matplotlib" },
@@ -393,18 +393,13 @@ viz = [
     { name = "xlsxwriter" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "dataframe-image", marker = "extra == 'viz'", specifier = ">=0.2.6,<1" },
     { name = "fredapi", marker = "extra == 'notebooks'", specifier = ">=0.5.2" },
     { name = "gradio", marker = "extra == 'viz'", specifier = ">=5.29.0,<6" },
     { name = "jupyter", marker = "extra == 'notebooks'", specifier = ">=1.1.1" },
-    { name = "matplotlib", specifier = ">=3.10.8" },
+    { name = "matplotlib", specifier = ">=3.10.8,<4" },
     { name = "matplotlib", marker = "extra == 'viz'", specifier = ">=3.0,<4" },
     { name = "nltk", specifier = ">=3.9.1,<4" },
     { name = "pandas", specifier = ">=2.2.3,<3" },
@@ -415,16 +410,13 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0,<7" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4.0" },
     { name = "scikit-learn", specifier = ">=1.5.2,<2" },
-    { name = "seaborn", specifier = ">=0.13.2" },
+    { name = "seaborn", specifier = ">=0.13.2,<1" },
     { name = "seaborn", marker = "extra == 'viz'", specifier = ">=0.13.2,<1" },
     { name = "tqdm", specifier = ">=4.0.0,<5" },
     { name = "wordcloud", marker = "extra == 'viz'", specifier = ">=1.9.4,<2" },
     { name = "xlsxwriter", marker = "extra == 'viz'", specifier = ">=3.2.5,<4" },
 ]
 provides-extras = ["viz", "dev", "notebooks"]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.0.2" }]
 
 [[package]]
 name = "babel"

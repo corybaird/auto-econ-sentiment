@@ -1,6 +1,7 @@
 import os
 import logging
 import argparse
+from typing import Optional, Union
 import pandas as pd
 from tqdm import tqdm
 from pathlib import Path
@@ -15,18 +16,28 @@ logger = logging.getLogger(__name__)
 
 
 class AutoEconSentiment:
-    def __init__(self, import_file_path, text_column, date_column, export_path):
+    """End-to-end pipeline that loads a text corpus, cleans it, and scores it
+    with one or more lexical sentiment dictionaries."""
+
+    def __init__(
+        self,
+        import_file_path: Union[str, Path],
+        text_column: str,
+        date_column: str,
+        export_path: Union[str, Path],
+    ) -> None:
         self.import_file = import_file_path
         self.export_path = export_path
         self.text_column = text_column
         self.date_column = date_column
         os.makedirs(self.export_path, exist_ok=True)
-        self.df_raw = None
-        self.df_clean = None
-        self.df_sent_lexical = None
+        self.df_raw: Optional[pd.DataFrame] = None
+        self.df_clean: Optional[pd.DataFrame] = None
+        self.df_sent_lexical: Optional[pd.DataFrame] = None
         logger.info("AutoEconSentiment initialized successfully")
 
-    def load_data(self):
+    def load_data(self) -> pd.DataFrame:
+        """Load the input file via :class:`TextLoader` and return the raw DataFrame."""
         logger.info("Loading data...")
         try:
             loader = TextLoader(
@@ -40,7 +51,8 @@ class AutoEconSentiment:
         logger.info(f"Data loaded successfully. Shape: {self.df_raw.shape}")
         return self.df_raw
 
-    def clean_data(self, clean_config=None):
+    def clean_data(self, clean_config: Optional[dict] = None) -> pd.DataFrame:
+        """Run :class:`TextCleaner` on the loaded data and return the cleaned DataFrame."""
         logger.info("Cleaning data...")
         cleaner = TextCleaner(
             df=self.df_raw,
@@ -51,7 +63,13 @@ class AutoEconSentiment:
         self.df_clean = cleaner.run()
         return self.df_clean
 
-    def analyze_sentiment_lexical(self, dictionaries, aggregation_methods):
+    def analyze_sentiment_lexical(
+        self,
+        dictionaries: Union[dict, list],
+        aggregation_methods: list,
+    ) -> pd.DataFrame:
+        """Score the cleaned text against each dictionary × aggregation method
+        combination and return the concatenated results."""
         logger.info("Analyzing sentiment using lexical methods...")
         pipe_lexical = SentimentLexical(df_input=self.df_clean.dropna(subset=[self.text_column]))
         df_sent_lexical = []
@@ -94,7 +112,18 @@ class AutoEconSentiment:
         logger.info("Lexical sentiment analysis complete.")
         return self.df_sent_lexical
 
-    def run(self, clean_config, dictionaries, aggregation_methods, export_results):
+    def run(
+        self,
+        clean_config: Optional[dict],
+        dictionaries: Union[dict, list, None],
+        aggregation_methods: Optional[list],
+        export_results: bool,
+    ) -> tuple[Optional[pd.DataFrame], Optional[pd.DataFrame], Optional[pd.DataFrame]]:
+        """Run the full pipeline (load → clean → score → optional export).
+
+        Returns a ``(df_raw, df_clean, df_sent_lexical)`` tuple. Any stage that is
+        skipped (e.g. no dictionaries supplied) yields ``None`` in its slot.
+        """
         logger.info("Starting AutoEconSentiment pipeline...")
         self.load_data()
         self.clean_data(clean_config=clean_config)
