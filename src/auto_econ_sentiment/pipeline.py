@@ -145,8 +145,8 @@ if __name__ == "__main__":
             ],
             "date": ["2024-01-15", "2024-03-20"],
         }
-        Path("data/test/text_input/synthetic").mkdir(parents=True, exist_ok=True)
-        csv_path = "data/test/text_input/synthetic/test_onerow_onestatement.csv"
+        Path("tests/fixtures/synthetic_input").mkdir(parents=True, exist_ok=True)
+        csv_path = "tests/fixtures/synthetic_input/test_onerow_onestatement.csv"
         pd.DataFrame(data).to_csv(csv_path, index=False)
 
         analyzer = AutoEconSentiment(
@@ -156,7 +156,7 @@ if __name__ == "__main__":
             export_path="data/sentiment/basic_tests",
         )
         analyzer.run(
-            clean_config={"clean_html": True, "clean_numbers_percentages": True, "remove_headers": []},
+            clean_config={"clean_html": True, "clean_numbers_percentages": True, "remove_headers": [], "tokenize": True},
             dictionaries={"unstemmed": ["correa", "hubert", "lm", "hiv"], "stemmed": []},
             aggregation_methods=["posneg", "allwords"],
             export_results=True,

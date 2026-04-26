@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 from auto_econ_sentiment.pipeline import AutoEconSentiment
+from references.dictionaries.ISO3_TO_ISO2 import ISO3_TO_ISO2
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -30,15 +31,30 @@ class CBSpeechesSentiment:
         logger.info(f"Found {len(all_files)} central bank files to process.")
 
         text_col = self.config["input"]["text_column"]
+        filter_config = self.config.get("filter", {})
+        target_cb = filter_config.get("central_bank")
 
         for file_path in all_files:
             cb_name = file_path.name.replace(".parquet.gzip", "")
+            
+            # Check filter if provided
+            if target_cb:
+                df_check = pd.read_parquet(file_path, columns=["CentralBank"])
+                if df_check["CentralBank"].iloc[0] != target_cb:
+                    logger.info(f"Skipping {cb_name} (filter: {target_cb})")
+                    continue
+
             clean_cb_name = (
                 re.sub(r"[<>:\"/\\|?*\s]+", "_", cb_name).strip("_.").lower()
             )
             logger.info(f"--- Processing {clean_cb_name} ---")
 
             df = pd.read_parquet(file_path)
+            
+            # Add ISO2 column for easier reading as requested by user
+            if "Country" in df.columns:
+                df["Country_ISO2"] = df["Country"].map(ISO3_TO_ISO2)
+            
             # Drop empty rows to prevent CountVectorizer crashes
             orig_len = len(df)
             df = df.dropna(subset=[text_col]).reset_index(drop=True)
@@ -81,8 +97,31 @@ class CBSpeechesSentiment:
             if temp_path.exists():
                 temp_path.unlink()
 
+    def merge_results(self):
+        base_export = Path(self.config["output"]["export_path"])
+        # Only merge results from subdirectories
+        all_results_files = [f for f in base_export.glob("**/sentiment_all_results.csv") if f.parent != base_export]
+        
+        if not all_results_files:
+            logger.warning("No individual results files found to merge.")
+            return
+
+        logger.info(f"Merging {len(all_results_files)} results files...")
+        combined_df = pd.concat([pd.read_csv(f, keep_default_na=False) for f in all_results_files], ignore_index=True)
+        
+        # Apply mapping here to ensure all banks (even previously processed) have ISO2 codes
+        if "Country" in combined_df.columns:
+            logger.info("Applying ISO2 mapping to all merged results.")
+            combined_df["Country_ISO2"] = combined_df["Country"].map(ISO3_TO_ISO2)
+        
+        # Ensure the output directory exists
+        os.makedirs(base_export, exist_ok=True)
+        combined_df.to_csv(base_export / "sentiment_all_results.csv", index=False)
+        logger.info(f"Merged results saved to {base_export / 'sentiment_all_results.csv'}")
+
     def run(self):
         self.process_all_banks()
+        self.merge_results()
         logger.info("CBS speeches sentiment pipeline for all banks complete.")
 
 

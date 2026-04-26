@@ -14,7 +14,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 - `TextLoader` for CSV/Excel ingestion.
 - `TextCleaner` with HTML cleaning, unicode normalization, stemming, and sentence tokenization.
 - `SentimentLexical` with `posneg` and `allwords` aggregation methods.
-- `AutoEconSentiment` pipeline orchestrator with YAML-based configuration.
+- `AutoEconSentiment` orchestration pipeline with cleanly decoupled data loading, cleaning, and lexical execution into extensible class methods.
 - GitHub Actions CI workflow running pytest across Python 3.10, 3.11, and 3.12.
 - GitHub Actions PyPI publish workflow using OIDC Trusted Publisher.
 - GitHub Actions release workflow to auto-create GitHub Releases on tag push.
