@@ -17,7 +17,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 - Improved the Features section of the `README.md` to match industry standards, highlighting scalability and modularity.
 - Migrated detailed library components and testing descriptions from the `README.md` to `docs/architecture.md`.
 - Updated `notebooks/autoecon_demo.ipynb` to improve the walkthrough presentation.
-- Updated `.agents/commit-agent.md` to enforce `CHANGELOG.md` updates before committing.
+- Updated `src/auto_econ_sentiment/pipeline.py` and `src/data/cb_speeches_clean.py` to export results as compressed parquet files instead of CSV.
+- Updated `notebooks/demo_cb_speechs.ipynb` and `README.md` to reference `.parquet.gzip` output files.
 
 ---
 
