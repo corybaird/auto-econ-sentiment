@@ -142,7 +142,7 @@ class AutoEconSentiment:
             if self.df_clean is not None:
                 dataframes_to_concat.append(self.df_clean.set_index("id_text"))
             if self.df_sent_lexical is not None:
-                self.df_sent_lexical.to_csv(f"{self.export_path}/sentiment_lexical.csv")
+                self.df_sent_lexical.to_parquet(f"{self.export_path}/sentiment_lexical.parquet.gzip", compression="gzip", index=False)
                 dataframes_to_concat.append(
                     self.df_sent_lexical.reset_index().set_index("id_text").filter(regex="sentiment")
                 )
@@ -151,8 +151,8 @@ class AutoEconSentiment:
                 df_sentiment_all = pd.concat(dataframes_to_concat, axis=1)
                 df_sentiment_all.drop(
                     ["Unnamed: 0", "text", "id_text"], axis=1, errors="ignore"
-                ).to_csv(f"{self.export_path}/sentiment_all_results.csv")
-                logger.info(f"ALL sentiment results exported to: {self.export_path}/sentiment_all_results.csv")
+                ).to_parquet(f"{self.export_path}/sentiment_all_results.parquet.gzip", compression="gzip", index=False)
+                logger.info(f"ALL sentiment results exported to: {self.export_path}/sentiment_all_results.parquet.gzip")
 
         logger.info("AutoEconSentiment pipeline finished.")
         return self.df_raw, self.df_clean, self.df_sent_lexical

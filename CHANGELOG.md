@@ -6,6 +6,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ---
 
+## [Unreleased]
+
+### Added
+- Created `docs/architecture.md` combining architecture and file structure details.
+- Added LaTeX formulas for `posneg` and `allwords` aggregation in the architecture documentation.
+- Added input file paths to the configuration overview table in `README.md`.
+
+### Changed
+- Improved the Features section of the `README.md` to match industry standards, highlighting scalability and modularity.
+- Migrated detailed library components and testing descriptions from the `README.md` to `docs/architecture.md`.
+- Updated `notebooks/autoecon_demo.ipynb` to improve the walkthrough presentation.
+- Updated `src/auto_econ_sentiment/pipeline.py` and `src/data/cb_speeches_clean.py` to export results as compressed parquet files instead of CSV.
+- Updated `notebooks/demo_cb_speechs.ipynb` and `README.md` to reference `.parquet.gzip` output files.
+
+---
+
 ## [0.1.1] - 2026-04-26
 
 ### Added

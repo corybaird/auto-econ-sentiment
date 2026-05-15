@@ -100,14 +100,14 @@ class CBSpeechesSentiment:
     def merge_results(self):
         base_export = Path(self.config["output"]["export_path"])
         # Only merge results from subdirectories
-        all_results_files = [f for f in base_export.glob("**/sentiment_all_results.csv") if f.parent != base_export]
+        all_results_files = [f for f in base_export.glob("**/sentiment_all_results.parquet.gzip") if f.parent != base_export]
         
         if not all_results_files:
             logger.warning("No individual results files found to merge.")
             return
 
         logger.info(f"Merging {len(all_results_files)} results files...")
-        combined_df = pd.concat([pd.read_csv(f, keep_default_na=False) for f in all_results_files], ignore_index=True)
+        combined_df = pd.concat([pd.read_parquet(f) for f in all_results_files], ignore_index=True)
         
         # Apply mapping here to ensure all banks (even previously processed) have ISO2 codes
         if "Country" in combined_df.columns:
@@ -116,8 +116,8 @@ class CBSpeechesSentiment:
         
         # Ensure the output directory exists
         os.makedirs(base_export, exist_ok=True)
-        combined_df.to_csv(base_export / "sentiment_all_results.csv", index=False)
-        logger.info(f"Merged results saved to {base_export / 'sentiment_all_results.csv'}")
+        combined_df.to_parquet(base_export / "sentiment_all_results.parquet.gzip", compression="gzip", index=False)
+        logger.info(f"Merged results saved to {base_export / 'sentiment_all_results.parquet.gzip'}")
 
     def run(self):
         self.process_all_banks()
