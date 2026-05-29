@@ -2,6 +2,10 @@
 
 This document outlines the planned future features for `auto-econ-sentiment` and the standardized procedures for versioning, releasing, and publishing via GitHub and PyPI.
 
+For the research publication path, including the lexical-only arXiv v1 plan, downstream-task demonstration, custom-dictionary documentation, and transformer update strategy, see [`docs/arxiv_paper_plan.md`](arxiv_paper_plan.md).
+
+For the detailed transformer refactor plan, including optional dependencies, config design, label mapping, sentence aggregation, pipeline integration, and testing strategy, see [`docs/ROADMAP_transformer.md`](ROADMAP_transformer.md).
+
 ## Future Plans: `v0.2.0` (Transformer Integration)
 The next major objective is expanding the purely lexical pipeline to include Hugging Face Transformer models. This release will significantly upgrade capabilities while maintaining the existing YAML-driven architecture.
 
