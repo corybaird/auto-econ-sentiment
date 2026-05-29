@@ -230,12 +230,14 @@ def test_public_api_imports():
     from auto_econ_sentiment import (
         AutoEconSentiment,
         SentimentLexical,
+        SentimentTransformers,
         TextLoader,
         TextCleaner,
         AutoEconSentimentError,
         __version__,
     )
     assert __version__ is not None
+    assert SentimentTransformers is not None
 
 
 def test_version_is_string():

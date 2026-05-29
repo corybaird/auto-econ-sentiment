@@ -44,7 +44,17 @@ Configure inputs, cleaning rules, and dictionaries in `params.yaml`, then run:
 uv run python -m src.auto_econ_sentiment.pipeline
 ```
 
-### Q.4 Run the CBS Speeches Demo
+### Q.4 Optional Transformer Install
+
+The default install is lexical-only. Transformer sentiment is opt-in so users do not need to install `torch` or download Hugging Face models unless they want that backend:
+
+```bash
+uv sync --extra transformers
+```
+
+Then enable `models.transformer.enabled: true` in `params.yaml`. See [Transformer Sentiment](docs/transformers.md) for label-map and aggregation details.
+
+### Q.5 Run the CBS Speeches Demo
 
 Download ~35K central bank speeches and run sentiment analysis across all 143 central banks:
 

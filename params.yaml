@@ -16,6 +16,19 @@ models:
       unstemmed: [correa, hubert, lm, hiv]
       stemmed: [bn, ap]
     aggregation_methods: [posneg, allwords]
+  transformer:
+    enabled: false
+    text_column_transformer: text_clean
+    models:
+      - model_name: Moritz-Pfeifer/CentralBankRoBERTa-sentiment-classifier
+        model_name_short: cbroberta
+        num_labels: 2
+        max_length: 512
+        batch_size: 8
+        aggregation: byalltext
+        label_map:
+          positive: 1
+          negative: -1
 
 cleaning:
   clean_html: true
@@ -27,4 +40,3 @@ cleaning:
   ]
   tokenize: true
   stem: true
-
