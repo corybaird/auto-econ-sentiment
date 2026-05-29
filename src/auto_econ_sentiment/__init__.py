@@ -7,6 +7,7 @@ except PackageNotFoundError:
 
 from auto_econ_sentiment.pipeline import AutoEconSentiment
 from auto_econ_sentiment.models.sentiment_lexical import SentimentLexical
+from auto_econ_sentiment.models.sentiment_transformers import SentimentTransformers
 from auto_econ_sentiment.clean.text_loader import TextLoader
 from auto_econ_sentiment.clean.text_clean import TextCleaner
 from auto_econ_sentiment.exceptions import (
@@ -19,6 +20,7 @@ from auto_econ_sentiment.exceptions import (
 __all__ = [
     "AutoEconSentiment",
     "SentimentLexical",
+    "SentimentTransformers",
     "TextLoader",
     "TextCleaner",
     "AutoEconSentimentError",
