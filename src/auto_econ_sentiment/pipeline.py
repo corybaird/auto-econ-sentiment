@@ -158,6 +158,8 @@ class AutoEconSentiment:
                     num_labels=model_config.get("num_labels"),
                     max_length=model_config.get("max_length", 512),
                     batch_size=model_config.get("batch_size", 16),
+                    output_schema=model_config.get("output_schema"),
+                    net_sentiment_formula=model_config.get("net_sentiment_formula", "positive_minus_negative"),
                     huggingface_token=model_config.get("huggingface_token"),
                     device=model_config.get("device"),
                 )

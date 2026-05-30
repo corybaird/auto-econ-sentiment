@@ -23,6 +23,22 @@ Add transformer-based sentiment analysis as an optional backend that can be run 
 
 The transformer path should not replace the lexical paper baseline. It should extend it in a later software and paper version so the project can demonstrate how empirical text research can be updated instead of treated as static.
 
+## ECB FSR Motivation
+
+The ECB Financial Stability Review special feature **"From dictionaries to AI: a new era in sentiment analysis for financial stability"** provides a useful design target for this roadmap. It compares dictionary-based sentiment, FinBERT-style transformer classification and prompt-based AI assessment filtering on ECB Financial Stability Review text.
+
+Reference note:
+
+`docs/ECB_FSR_AI_sentiment_feedback.md`
+
+Implications for this roadmap:
+
+1. Treat lexical, transformer and future prompt-based AI outputs as complementary measures, not as a simple replacement ladder.
+2. Preserve the dictionary pipeline as the deterministic baseline for comparison.
+3. Make transformer sentence-level outputs easy to aggregate into document-level negative, neutral and positive shares.
+4. Add a harmonized net sentiment convention so lexical and transformer outputs can be compared in one report.
+5. Keep prompt-based relevance or assessment filtering outside the first transformer release, but reserve schema space for it.
+
 ## Refactor Principles
 
 1. Keep lexical behavior unchanged.
@@ -32,6 +48,7 @@ The transformer path should not replace the lexical paper baseline. It should ex
 5. Store model configuration and model identity in exported metadata.
 6. Separate scoring mechanics from pipeline orchestration.
 7. Make CPU execution possible for small examples, while allowing GPU acceleration when available.
+8. Support method-comparison workflows where disagreement between dictionaries and transformers is an output, not an error.
 
 ## Current Source Assessment
 
@@ -137,6 +154,8 @@ models:
         max_length: 512
         batch_size: 8
         aggregation: bysentence
+        output_schema: shares
+        net_sentiment_formula: positive_minus_negative
         sentence_probability_cutoff: 0.7
         label_map:
           LABEL_0: 1
@@ -151,6 +170,33 @@ Important design choices:
 - `model_name_short` controls output column prefixes.
 - `label_map` keeps model-specific sentiment direction explicit.
 - `aggregation` can be `byalltext` or `bysentence`.
+- `output_schema: shares` asks the package to export negative, neutral and positive counts/shares when the model labels allow it.
+- `net_sentiment_formula` makes the sign convention explicit. The default should be `positive_minus_negative`.
+
+### ECB FSR-Inspired Config Extensions
+
+The ECB FSR article uses comparable sentiment outputs across dictionary, transformer and prompt-based approaches. To support that comparison, add optional settings that are inactive by default:
+
+```yaml
+analysis:
+  method_comparison:
+    enabled: false
+    harmonized_sentiment: true
+    groupby: [date]
+    disagreement_examples: 25
+
+models:
+  transformer:
+    assessment_filter:
+      enabled: false
+      column: assessment_bearing
+```
+
+First implementation scope:
+
+1. Implement `harmonized_sentiment` for transformer outputs only.
+2. Allow lexical outputs to join the comparison report through existing sentiment columns.
+3. Defer `assessment_filter.enabled` until a future LLM or classifier module exists.
 
 ## API Design
 
@@ -232,8 +278,24 @@ Transformer sentence-level outputs:
 
 ```text
 {model_short}_countsentence_positive
+{model_short}_countsentence_neutral
 {model_short}_countsentence_negative
+{model_short}_sharesentence_positive
+{model_short}_sharesentence_neutral
+{model_short}_sharesentence_negative
 {model_short}_sentiment_bysentence
+```
+
+Harmonized comparison outputs inspired by the ECB FSR article:
+
+```text
+{model_short}_count_positive
+{model_short}_count_neutral
+{model_short}_count_negative
+{model_short}_share_positive
+{model_short}_share_neutral
+{model_short}_share_negative
+{model_short}_net_sentiment
 ```
 
 Metadata columns to consider:
@@ -242,9 +304,24 @@ Metadata columns to consider:
 {model_short}_model_name
 {model_short}_aggregation
 {model_short}_max_length
+{model_short}_net_sentiment_formula
 ```
 
 Avoid ambiguous columns such as plain `{model_short}_sentiment` when both sentence and document aggregation are available.
+
+## Method Comparison Report
+
+Add a lightweight report generator after transformer support is stable. The goal is to reproduce the useful part of the ECB FSR article's design: show where lexical and context-aware methods agree, and where they diverge.
+
+Recommended outputs:
+
+1. Pairwise correlation table across lexical and transformer sentiment columns.
+2. Time-series aggregates by date or configured group columns.
+3. Top disagreement examples with original text, lexical score, transformer label and transformer probability.
+4. Coverage diagnostics: non-empty lexical hit rate, transformer confidence and missing-text counts.
+5. Optional group-level summaries by central bank, country, speaker, chapter or topic when those columns exist.
+
+This report should be descriptive. It should not claim that transformer results are the ground truth.
 
 ## Label Mapping Refactor
 
@@ -290,6 +367,32 @@ Recommended first version:
 - Document the expected schema.
 - Add package-owned sentence splitting later.
 
+## Future Assessment Filter
+
+The ECB FSR article uses prompt-based AI to identify sentences that contain explicit financial stability risk assessments. That is useful, but it should not be bundled into the first transformer refactor.
+
+Reserve a future schema:
+
+```text
+assessment_bearing
+risk_direction
+time_orientation
+risk_topic
+assessment_confidence
+assessment_model_name
+assessment_prompt_version
+```
+
+Potential classifier values:
+
+```text
+assessment_bearing: true, false
+risk_direction: positive, neutral, negative, mixed
+time_orientation: backward_looking, current, forward_looking
+```
+
+Implementation should wait until the package has a clear provider-neutral LLM interface or a supervised classifier trained for assessment-bearing sentences.
+
 ## Testing Strategy
 
 Avoid downloading large Hugging Face models in default tests.
@@ -300,7 +403,9 @@ Test layers:
 2. Unit-test label mapping with synthetic probability arrays.
 3. Unit-test output column naming.
 4. Mock tokenizer/model inference for fast CI.
-5. Add one optional integration test behind a marker:
+5. Unit-test harmonized count/share/net sentiment calculations with synthetic labels.
+6. Unit-test method-comparison report generation with tiny lexical and transformer fixtures.
+7. Add one optional integration test behind a marker:
 
 ```bash
 uv run pytest -m transformers
@@ -325,6 +430,8 @@ Add:
 - Expected output schema.
 - Short warning about label-map responsibility.
 - Example comparing lexical and transformer outputs.
+- Example harmonized negative/neutral/positive shares.
+- Short note connecting the roadmap to `docs/ECB_FSR_AI_sentiment_feedback.md`.
 
 The docs should make clear that transformer outputs are model-dependent and not automatically more correct than lexical outputs.
 
@@ -341,10 +448,15 @@ Suggested v2 figures:
 2. Time-series comparison for selected central banks.
 3. Agreement/disagreement table for recession periods or policy episodes.
 4. Downstream task comparison using lexical and transformer scores.
+5. Harmonized negative/neutral/positive shares over time, following the ECB FSR comparison logic.
 
 Core research question:
 
 When does a context-aware transformer measure agree with transparent lexical dictionaries, and when does it materially revise the empirical interpretation?
+
+ECB FSR-inspired framing:
+
+Dictionary methods, transformer classifiers and prompt-based AI systems should be treated as different measurement instruments. A useful package should let researchers inspect their agreement, disagreement and coverage rather than collapse them into one authoritative score.
 
 ## Branch Sequence
 
@@ -356,7 +468,8 @@ Recommended implementation branches:
 4. `update/pipeline-transformer-integration`
 5. `add/transformer-tests`
 6. `docs/transformer-usage`
-7. `paper/transformer-comparison-v2`
+7. `add/method-comparison-report`
+8. `paper/transformer-comparison-v2`
 
 Keep each branch small enough to review independently.
 
@@ -372,3 +485,5 @@ Transformer support is ready when:
 6. Outputs can be merged with lexical scores by `id_text`.
 7. Label mappings are explicit and validated.
 8. The README and docs explain optional dependencies and model-specific caveats.
+9. Sentence-level models can export count/share/net sentiment columns when labels map to positive, neutral and negative.
+10. A small method-comparison report can be generated from mocked lexical and transformer outputs.

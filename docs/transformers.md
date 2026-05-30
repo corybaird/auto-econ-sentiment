@@ -41,6 +41,29 @@ models:
 
 Set `enabled: true` only after installing the optional dependencies.
 
+For sentence-level models with positive, neutral, and negative labels, enable harmonized shares:
+
+```yaml
+models:
+  transformer:
+    enabled: true
+    text_column_transformer: text_clean
+    models:
+      - model_name: gtfintechlab/FOMC-RoBERTa
+        model_name_short: fomc_roberta
+        num_labels: 3
+        max_length: 512
+        batch_size: 8
+        aggregation: bysentence
+        output_schema: shares
+        net_sentiment_formula: positive_minus_negative
+        sentence_probability_cutoff: 0.7
+        label_map:
+          LABEL_0: 1
+          LABEL_1: -1
+          LABEL_2: 0
+```
+
 ## Label Maps
 
 Every transformer model can use different label names and label ordering. The package therefore requires an explicit `label_map`.
@@ -95,6 +118,24 @@ Outputs include:
 ```text
 {model_short}_countsentence_{label}
 {model_short}_sentiment_bysentence
+```
+
+If `output_schema: shares` is set, outputs also include harmonized columns that are comparable across models with different raw label names:
+
+```text
+{model_short}_count_positive
+{model_short}_count_neutral
+{model_short}_count_negative
+{model_short}_share_positive
+{model_short}_share_neutral
+{model_short}_share_negative
+{model_short}_net_sentiment
+```
+
+The default net sentiment formula is:
+
+```text
+share_positive - share_negative
 ```
 
 Sentence-level probabilities are exported separately when `export_results` is enabled.

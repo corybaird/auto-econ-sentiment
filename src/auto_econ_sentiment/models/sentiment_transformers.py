@@ -46,6 +46,8 @@ class SentimentTransformers(SentimentBase):
         num_labels: Optional[int] = None,
         max_length: int = 512,
         batch_size: int = 16,
+        output_schema: Optional[str] = None,
+        net_sentiment_formula: str = "positive_minus_negative",
         df_input: Optional[pd.DataFrame] = None,
         text_column: Optional[str] = None,
         huggingface_token: str | bool | None = None,
@@ -61,6 +63,8 @@ class SentimentTransformers(SentimentBase):
         self.num_labels = num_labels
         self.max_length = max_length
         self.batch_size = batch_size
+        self.output_schema = output_schema
+        self.net_sentiment_formula = net_sentiment_formula
         self.huggingface_token = huggingface_token
         self.tokenizer = tokenizer
         self.model = model
@@ -136,6 +140,64 @@ class SentimentTransformers(SentimentBase):
             return self.label_map[str(label)]
         except KeyError as exc:
             raise ValueError(f"label_map has no direction for predicted label: {label}") from exc
+
+    @staticmethod
+    def _direction_name(direction: float) -> str:
+        if direction > 0:
+            return "positive"
+        if direction < 0:
+            return "negative"
+        return "neutral"
+
+    def _add_harmonized_sentence_outputs(self, df_score: pd.DataFrame, id2label: dict[int, str]) -> pd.DataFrame:
+        """Add positive/neutral/negative count, share and net sentiment columns.
+
+        These columns make outputs comparable across models with different raw
+        label names, including generic labels such as ``LABEL_0``.
+        """
+        harmonized = {
+            "positive": [],
+            "neutral": [],
+            "negative": [],
+        }
+        for label in id2label.values():
+            raw_count_col = f"{self.model_name_short}_{label}"
+            if raw_count_col not in df_score.columns:
+                continue
+            direction_name = self._direction_name(self._label_direction(label))
+            harmonized[direction_name].append(raw_count_col)
+
+        for direction_name, columns in harmonized.items():
+            count_col = f"{self.model_name_short}_count_{direction_name}"
+            if columns:
+                df_score[count_col] = df_score[columns].sum(axis=1)
+            else:
+                df_score[count_col] = 0
+
+        count_cols = [
+            f"{self.model_name_short}_count_positive",
+            f"{self.model_name_short}_count_neutral",
+            f"{self.model_name_short}_count_negative",
+        ]
+        denominator = df_score[count_cols].sum(axis=1).replace(0, np.nan)
+        for direction_name in ("positive", "neutral", "negative"):
+            count_col = f"{self.model_name_short}_count_{direction_name}"
+            share_col = f"{self.model_name_short}_share_{direction_name}"
+            df_score[share_col] = (df_score[count_col] / denominator).fillna(0)
+
+        positive_share = df_score[f"{self.model_name_short}_share_positive"]
+        negative_share = df_score[f"{self.model_name_short}_share_negative"]
+        net_sentiment_formula = getattr(self, "net_sentiment_formula", "positive_minus_negative")
+        if net_sentiment_formula == "negative_minus_positive":
+            df_score[f"{self.model_name_short}_net_sentiment"] = negative_share - positive_share
+        elif net_sentiment_formula == "positive_minus_negative":
+            df_score[f"{self.model_name_short}_net_sentiment"] = positive_share - negative_share
+        else:
+            raise ValueError(
+                "net_sentiment_formula must be either 'positive_minus_negative' "
+                "or 'negative_minus_positive'."
+            )
+        return df_score
 
     def analyze_sentiment_single(
         self,
@@ -251,6 +313,8 @@ class SentimentTransformers(SentimentBase):
         denominator = df_score[count_cols].sum(axis=1).replace(0, np.nan)
         numerator = df_score[weighted_columns].sum(axis=1) if weighted_columns else 0
         df_score[f"{self.model_name_short}_sentiment_bysentence"] = (numerator / denominator).fillna(0)
+        if getattr(self, "output_schema", None) == "shares":
+            df_score = self._add_harmonized_sentence_outputs(df_score, id2label)
         df_score = df_score.drop(columns=weighted_columns, errors="ignore")
         df_score = df_score.rename(
             columns={
