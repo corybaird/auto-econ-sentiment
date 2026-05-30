@@ -16,6 +16,38 @@ class _DummyModel:
     config = _DummyConfig()
 
 
+class _KeywordTransformer(SentimentTransformers):
+    def __init__(self, df_input: pd.DataFrame):
+        self.input_df = df_input
+        self.text_column = "text"
+        self.model_name = "keyword-sample"
+        self.model_name_short = "sample"
+        self.label_map = {
+            "LABEL_0": 1.0,
+            "LABEL_1": -1.0,
+            "LABEL_2": 0.0,
+        }
+        self.output_schema = "shares"
+        self.net_sentiment_formula = "positive_minus_negative"
+        self.model = _DummyModel()
+        self.num_labels = 3
+        self.df_labels = None
+        self.df_sentence_probabilities = None
+        self.df_sentiment_output = None
+
+    def analyze_sentiment_single(self, texts, return_probabilities=True):
+        probabilities = []
+        for text in texts:
+            text_lower = str(text).lower()
+            if any(word in text_lower for word in ("strong", "progress", "resilient")):
+                probabilities.append([0.9, 0.05, 0.05])
+            elif any(word in text_lower for word in ("weak", "recession", "stress")):
+                probabilities.append([0.05, 0.9, 0.05])
+            else:
+                probabilities.append([0.05, 0.05, 0.9])
+        return self._postprocess_predictions(probabilities, return_probabilities=return_probabilities)
+
+
 def _transformer_without_dependencies() -> SentimentTransformers:
     transformer = SentimentTransformers.__new__(SentimentTransformers)
     transformer.model_name_short = "toy"
@@ -70,3 +102,33 @@ def test_transformer_unknown_net_sentiment_formula_raises():
 
     with pytest.raises(ValueError, match="net_sentiment_formula"):
         transformer.sentiment_bysentence(sentence_probability_cutoff=0.7)
+
+
+def test_transformer_pipeline_scores_sample_texts_without_model_download():
+    df = pd.DataFrame(
+        {
+            "id_text": [1, 1, 1, 2, 2],
+            "text": [
+                "Bank capital remains resilient and market functioning is strong.",
+                "Credit stress increased in vulnerable sectors.",
+                "The report reviews recent market developments.",
+                "Inflation progress supports a stronger outlook.",
+                "Funding conditions remain broadly stable.",
+            ],
+        }
+    )
+    transformer = _KeywordTransformer(df)
+
+    scores, probabilities = transformer.sentiment_pipeline(
+        aggregation="bysentence",
+        sentence_probability_cutoff=0.7,
+    )
+
+    assert scores.loc[1, "sample_count_positive"] == 1
+    assert scores.loc[1, "sample_count_negative"] == 1
+    assert scores.loc[1, "sample_count_neutral"] == 1
+    assert scores.loc[1, "sample_net_sentiment"] == pytest.approx(0)
+    assert scores.loc[2, "sample_count_positive"] == 1
+    assert scores.loc[2, "sample_count_neutral"] == 1
+    assert scores.loc[2, "sample_net_sentiment"] == pytest.approx(0.5)
+    assert probabilities.index.tolist() == [1, 1, 1, 2, 2]
