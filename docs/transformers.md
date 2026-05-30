@@ -41,6 +41,41 @@ models:
 
 Set `enabled: true` only after installing the optional dependencies.
 
+The model list can also use the older `Econ_Text_Algos` style with `name`, `short_name`, `label_mapping`, and `sentiment_values`. The package converts this to the internal `label_map` automatically:
+
+```yaml
+models:
+  transformer:
+    enabled: false
+    text_column_transformer: text_clean
+    aggregation_methods: [bysentence]
+    output_schema: shares
+    models:
+      - name: gtfintechlab/FOMC-RoBERTa
+        short_name: fomc
+        num_labels: 3
+        label_mapping:
+          LABEL_0: positive
+          LABEL_1: negative
+          LABEL_2: neutral
+        sentiment_values:
+          positive: 1
+          negative: -1
+          neutral: 0
+
+      - name: ProsusAI/finbert
+        short_name: finbertpro
+        num_labels: 3
+        label_mapping:
+          neutral: neutral
+          positive: positive
+          negative: negative
+        sentiment_values:
+          neutral: 0
+          positive: 1
+          negative: -1
+```
+
 For sentence-level models with positive, neutral, and negative labels, enable harmonized shares:
 
 ```yaml

@@ -38,6 +38,127 @@ class AutoEconSentiment:
         self.df_transformer_sentence_probabilities: Optional[pd.DataFrame] = None
         logger.info("AutoEconSentiment initialized successfully")
 
+    @staticmethod
+    def _normalize_transformer_aggregation(aggregation: str) -> str:
+        aggregation_aliases = {
+            "byalltext": "byalltext",
+            "full_text": "byalltext",
+            "fulltext": "byalltext",
+            "bysentence": "bysentence",
+            "sentence": "bysentence",
+            "sentence_pos": "bysentence",
+        }
+        try:
+            return aggregation_aliases[str(aggregation).lower()]
+        except KeyError as exc:
+            raise SentimentAnalysisError(
+                "Unknown transformer aggregation "
+                f"'{aggregation}'. Expected one of {sorted(aggregation_aliases)}."
+            ) from exc
+
+    @staticmethod
+    def _coerce_transformer_label_map(model_config: dict) -> dict:
+        if "label_map" in model_config:
+            return model_config["label_map"]
+
+        label_mapping = model_config.get("label_mapping")
+        sentiment_values = model_config.get("sentiment_values")
+        if not label_mapping or not sentiment_values:
+            raise SentimentAnalysisError(
+                "Transformer model config requires either 'label_map' or both "
+                "'label_mapping' and 'sentiment_values'."
+            )
+
+        missing_semantic_labels = sorted(
+            semantic_label
+            for semantic_label in set(label_mapping.values())
+            if semantic_label not in sentiment_values
+        )
+        if missing_semantic_labels:
+            raise SentimentAnalysisError(
+                "Transformer sentiment_values missing semantic labels: "
+                f"{missing_semantic_labels}."
+            )
+        return {
+            raw_label: sentiment_values[semantic_label]
+            for raw_label, semantic_label in label_mapping.items()
+        }
+
+    @classmethod
+    def _coerce_transformer_model_config(
+        cls,
+        model_config: dict,
+        aggregation: str,
+        default_text_column: str,
+        default_output_schema: Optional[str],
+        default_net_sentiment_formula: str,
+    ) -> dict:
+        coerced = {
+            **model_config,
+            "model_name": model_config.get("model_name", model_config.get("name")),
+            "model_name_short": model_config.get("model_name_short", model_config.get("short_name")),
+            "text_column_transformer": model_config.get("text_column_transformer", default_text_column),
+            "output_schema": model_config.get("output_schema", default_output_schema),
+            "net_sentiment_formula": model_config.get(
+                "net_sentiment_formula",
+                default_net_sentiment_formula,
+            ),
+            "aggregation": cls._normalize_transformer_aggregation(
+                model_config.get("aggregation", aggregation)
+            ),
+            "label_map": cls._coerce_transformer_label_map(model_config),
+        }
+        if not coerced["model_name"] or not coerced["model_name_short"]:
+            raise SentimentAnalysisError(
+                "Transformer model config requires model_name/name and "
+                "model_name_short/short_name."
+            )
+        return coerced
+
+    @classmethod
+    def _expand_transformer_model_configs(
+        cls,
+        transformer_config: dict,
+        default_text_column: str,
+    ) -> list[dict]:
+        model_configs = transformer_config.get("models", transformer_config.get("transformers", []))
+        if isinstance(model_configs, dict):
+            model_configs = [model_configs]
+        if not model_configs:
+            raise SentimentAnalysisError("Transformer config is enabled but no models are configured.")
+
+        aggregation_methods = transformer_config.get("aggregation_methods")
+        if not aggregation_methods:
+            aggregation_methods = [transformer_config.get("aggregation", "byalltext")]
+
+        expanded_configs = []
+        for model_config in model_configs:
+            for aggregation in aggregation_methods:
+                expanded_configs.append(
+                    cls._coerce_transformer_model_config(
+                        model_config=model_config,
+                        aggregation=aggregation,
+                        default_text_column=default_text_column,
+                        default_output_schema=transformer_config.get("output_schema"),
+                        default_net_sentiment_formula=transformer_config.get(
+                            "net_sentiment_formula",
+                            "positive_minus_negative",
+                        ),
+                    )
+                )
+        return expanded_configs
+
+    @staticmethod
+    def _transformer_config_enabled(transformer_config: Optional[dict]) -> bool:
+        if not transformer_config:
+            return False
+        return bool(
+            transformer_config.get(
+                "enabled",
+                transformer_config.get("models") or transformer_config.get("transformers"),
+            )
+        )
+
     def load_data(self) -> pd.DataFrame:
         """Load the input file via :class:`TextLoader` and return the raw DataFrame."""
         logger.info("Loading data...")
@@ -122,7 +243,7 @@ class AutoEconSentiment:
         if self.df_clean is None:
             raise SentimentAnalysisError("Clean data before transformer sentiment analysis.")
 
-        if not transformer_config.get("enabled", False):
+        if not self._transformer_config_enabled(transformer_config):
             logger.info("Skipping transformer sentiment analysis: disabled in config.")
             return pd.DataFrame()
 
@@ -131,13 +252,11 @@ class AutoEconSentiment:
         except ImportError as e:
             raise SentimentAnalysisError(str(e)) from e
 
-        model_configs = transformer_config.get("models", [])
-        if isinstance(model_configs, dict):
-            model_configs = [model_configs]
-        if not model_configs:
-            raise SentimentAnalysisError("Transformer config is enabled but no models are configured.")
-
         default_text_column = transformer_config.get("text_column_transformer", "text_clean")
+        model_configs = self._expand_transformer_model_configs(
+            transformer_config=transformer_config,
+            default_text_column=default_text_column,
+        )
         df_sent_transformer = []
         df_sentence_probabilities = []
 
@@ -215,7 +334,7 @@ class AutoEconSentiment:
         else:
             logger.warning("Skipping lexical sentiment analysis: no dictionaries or aggregation methods provided.")
 
-        if transformer_config and transformer_config.get("enabled", False):
+        if self._transformer_config_enabled(transformer_config):
             self.analyze_sentiment_transformer(transformer_config=transformer_config)
 
         if export_results:
@@ -298,11 +417,19 @@ if __name__ == "__main__":
             export_path=config["output"]["export_path"],
         )
         lexical_config = config.get("models", {}).get("lexical", {})
+        models_config = config.get("models", {})
+        transformer_config = models_config.get("transformer")
+        if transformer_config is None and models_config.get("transformers") is not None:
+            transformer_config = {
+                "enabled": bool(models_config.get("transformers")),
+                "models": models_config.get("transformers", []),
+                **models_config.get("transformers_config", {}),
+            }
         analyzer.run(
             clean_config=config.get("cleaning", {}),
             dictionaries=lexical_config.get("dictionaries", {}),
             aggregation_methods=lexical_config.get("aggregation_methods", []),
             export_results=config["output"].get("export_results", True),
-            transformer_config=config.get("models", {}).get("transformer", {}),
+            transformer_config=transformer_config or {},
         )
         logger.info("Pipeline run with params.yaml configuration completed.")
