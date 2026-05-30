@@ -212,6 +212,31 @@ def test_sentiment_text_column_override_does_not_mutate(fomc_df):
     assert analyzer.text_column == "text", "sentiment_pipeline must not mutate self.text_column"
 
 
+def test_sentiment_allwords_uses_text_column_override(tmp_path):
+    dictionary_path = tmp_path / "dict.yaml"
+    dictionary_path.write_text(
+        "toy:\n"
+        "  positive:\n"
+        "    - growth\n"
+        "  negative:\n"
+        "    - contraction\n"
+    )
+    df = pd.DataFrame({
+        "text": ["growth other words make denominator larger"],
+        "tokens": ["growth"],
+    })
+    analyzer = SentimentLexical(df_input=df, text_column="text", dictionary_path=str(dictionary_path))
+
+    result = analyzer.sentiment_pipeline(
+        dictionary_name="toy",
+        method="allwords",
+        text_column="tokens",
+    )
+
+    assert result["toy_counttoken_total_allwords"].iloc[0] == 1
+    assert result["toy_sentiment_allwords"].iloc[0] == 2
+
+
 def test_sentiment_unknown_dictionary(lexical):
     with pytest.raises(KeyError):
         lexical.sentiment_pipeline(dictionary_name="nonexistent_dict", method="posneg")
