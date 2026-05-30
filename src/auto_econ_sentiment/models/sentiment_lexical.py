@@ -51,9 +51,9 @@ class SentimentLexical(SentimentBase):
             if dictionary_name not in all_dicts:
                 raise KeyError(f"Dictionary '{dictionary_name}' not found in {self.dictionary_path}")
             dict_data = all_dicts[dictionary_name]
-            self.words_pos = [str(w) for w in dict_data.get('positive', [])]
-            self.words_neg = [str(w) for w in dict_data.get('negative', [])]
-            vocab = self.words_pos + self.words_neg + [str(w) for w in dict_data.get('neutral', [])]
+            self.words_pos = [str(w).lower() for w in dict_data.get('positive', [])]
+            self.words_neg = [str(w).lower() for w in dict_data.get('negative', [])]
+            vocab = self.words_pos + self.words_neg + [str(w).lower() for w in dict_data.get('neutral', [])]
             self.bow = CountVectorizer(vocabulary=vocab)
             self.logger.info(f"Dictionary loaded: {len(vocab)} total words, {len(self.words_pos)} positive, {len(self.words_neg)} negative")
         except Exception as e:
@@ -102,8 +102,14 @@ class SentimentLexical(SentimentBase):
             self.logger.error(f"Error in counting sentiment words: {e}")
             raise
 
-    def _postprocess_aggregate_sentiment(self, df_count: pd.DataFrame, method: str) -> pd.DataFrame:
+    def _postprocess_aggregate_sentiment(
+        self,
+        df_count: pd.DataFrame,
+        method: str,
+        text_column: Optional[str] = None,
+    ) -> pd.DataFrame:
         self.logger.info(f"Aggregating sentiment using method: {method}")
+        active_text_column = text_column if text_column is not None else self.text_column
         try:
             if method == 'posneg':
                 df_count['sentiment'] = df_count.apply(
@@ -115,7 +121,7 @@ class SentimentLexical(SentimentBase):
             
             elif method == 'allwords':
                 # Calculate total tokens for each document
-                total_tokens = CountVectorizer(stop_words='english').fit_transform(self.input_df[self.text_column]).toarray().sum(axis=1)
+                total_tokens = CountVectorizer(stop_words='english').fit_transform(self.input_df[active_text_column]).toarray().sum(axis=1)
                 # Add total tokens to the dataframe for reference
                 df_count['counttoken_total'] = total_tokens
                 
@@ -151,7 +157,11 @@ class SentimentLexical(SentimentBase):
             self._prepare_dictionary(dictionary_name)
             df_bow = self._process_vectorize_text(self.input_df[active_text_column])
             df_counts_sentiment = self._process_count_sentiment_words(df_bow)
-            df_final = self._postprocess_aggregate_sentiment(df_counts_sentiment, method).add_prefix(f"{dictionary_name}_")
+            df_final = self._postprocess_aggregate_sentiment(
+                df_counts_sentiment,
+                method,
+                text_column=active_text_column,
+            ).add_prefix(f"{dictionary_name}_")
             self.df_final = pd.concat([self.input_df, df_final], axis=1)
             self.logger.info(f"Sentiment pipeline completed successfully, results shape: {self.df_final.shape}")
             return self.df_final
