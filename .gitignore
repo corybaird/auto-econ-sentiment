@@ -1,5 +1,6 @@
 data/processed/
 data/raw/speeches/
+reports/
 
 .idea/
 .DS_Store
@@ -81,6 +82,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/feedback/
 
 # PyBuilder
 .pybuilder/

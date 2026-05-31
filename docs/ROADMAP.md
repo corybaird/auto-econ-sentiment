@@ -2,8 +2,10 @@
 
 This document outlines the planned future features for `auto-econ-sentiment` and the standardized procedures for versioning, releasing, and publishing via GitHub and PyPI.
 
+Research-planning notes, paper feedback, and transformer refactor scratch docs can live locally under `docs/feedback/`. That directory is ignored by git so exploratory notes can evolve without becoming release documentation.
+
 ## Future Plans: `v0.2.0` (Transformer Integration)
-The next major objective is expanding the purely lexical pipeline to include Hugging Face Transformer models. This release will significantly upgrade capabilities while maintaining the existing YAML-driven architecture.
+The next major objective is expanding the lexical pipeline to include optional Hugging Face transformer models. This release upgrades model coverage while maintaining the existing YAML-driven architecture and keeping transformer dependencies optional.
 
 ### Development Plan
 The implementation should follow these atomic branches (aligning with `workflows/branch-agent.md`):
