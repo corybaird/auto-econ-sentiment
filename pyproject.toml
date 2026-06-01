@@ -48,6 +48,10 @@ notebooks = [
     "jupyter>=1.1.1",
     "fredapi>=0.5.2",
 ]
+transformers = [
+    "torch>=2.0,<3",
+    "transformers>=4.40,<5",
+]
 
 [project.urls]
 Homepage = "https://github.com/corybaird/auto-econ-sentiment"

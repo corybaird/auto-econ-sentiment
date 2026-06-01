@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class AutoEconSentiment:
     """End-to-end pipeline that loads a text corpus, cleans it, and scores it
-    with one or more lexical sentiment dictionaries."""
+    with lexical dictionaries and optional transformer models."""
 
     def __init__(
         self,
@@ -34,7 +34,130 @@ class AutoEconSentiment:
         self.df_raw: Optional[pd.DataFrame] = None
         self.df_clean: Optional[pd.DataFrame] = None
         self.df_sent_lexical: Optional[pd.DataFrame] = None
+        self.df_sent_transformer: Optional[pd.DataFrame] = None
+        self.df_transformer_sentence_probabilities: Optional[pd.DataFrame] = None
         logger.info("AutoEconSentiment initialized successfully")
+
+    @staticmethod
+    def _normalize_transformer_aggregation(aggregation: str) -> str:
+        aggregation_aliases = {
+            "byalltext": "byalltext",
+            "full_text": "byalltext",
+            "fulltext": "byalltext",
+            "bysentence": "bysentence",
+            "sentence": "bysentence",
+            "sentence_pos": "bysentence",
+        }
+        try:
+            return aggregation_aliases[str(aggregation).lower()]
+        except KeyError as exc:
+            raise SentimentAnalysisError(
+                "Unknown transformer aggregation "
+                f"'{aggregation}'. Expected one of {sorted(aggregation_aliases)}."
+            ) from exc
+
+    @staticmethod
+    def _coerce_transformer_label_map(model_config: dict) -> dict:
+        if "label_map" in model_config:
+            return model_config["label_map"]
+
+        label_mapping = model_config.get("label_mapping")
+        sentiment_values = model_config.get("sentiment_values")
+        if not label_mapping or not sentiment_values:
+            raise SentimentAnalysisError(
+                "Transformer model config requires either 'label_map' or both "
+                "'label_mapping' and 'sentiment_values'."
+            )
+
+        missing_semantic_labels = sorted(
+            semantic_label
+            for semantic_label in set(label_mapping.values())
+            if semantic_label not in sentiment_values
+        )
+        if missing_semantic_labels:
+            raise SentimentAnalysisError(
+                "Transformer sentiment_values missing semantic labels: "
+                f"{missing_semantic_labels}."
+            )
+        return {
+            raw_label: sentiment_values[semantic_label]
+            for raw_label, semantic_label in label_mapping.items()
+        }
+
+    @classmethod
+    def _coerce_transformer_model_config(
+        cls,
+        model_config: dict,
+        aggregation: str,
+        default_text_column: str,
+        default_output_schema: Optional[str],
+        default_net_sentiment_formula: str,
+    ) -> dict:
+        coerced = {
+            **model_config,
+            "model_name": model_config.get("model_name", model_config.get("name")),
+            "model_name_short": model_config.get("model_name_short", model_config.get("short_name")),
+            "text_column_transformer": model_config.get("text_column_transformer", default_text_column),
+            "output_schema": model_config.get("output_schema", default_output_schema),
+            "net_sentiment_formula": model_config.get(
+                "net_sentiment_formula",
+                default_net_sentiment_formula,
+            ),
+            "aggregation": cls._normalize_transformer_aggregation(
+                model_config.get("aggregation", aggregation)
+            ),
+            "label_map": cls._coerce_transformer_label_map(model_config),
+        }
+        if not coerced["model_name"] or not coerced["model_name_short"]:
+            raise SentimentAnalysisError(
+                "Transformer model config requires model_name/name and "
+                "model_name_short/short_name."
+            )
+        return coerced
+
+    @classmethod
+    def _expand_transformer_model_configs(
+        cls,
+        transformer_config: dict,
+        default_text_column: str,
+    ) -> list[dict]:
+        model_configs = transformer_config.get("models", transformer_config.get("transformers", []))
+        if isinstance(model_configs, dict):
+            model_configs = [model_configs]
+        if not model_configs:
+            raise SentimentAnalysisError("Transformer config is enabled but no models are configured.")
+
+        aggregation_methods = transformer_config.get("aggregation_methods")
+        if not aggregation_methods:
+            aggregation_methods = [transformer_config.get("aggregation", "byalltext")]
+
+        expanded_configs = []
+        for model_config in model_configs:
+            for aggregation in aggregation_methods:
+                expanded_configs.append(
+                    cls._coerce_transformer_model_config(
+                        model_config=model_config,
+                        aggregation=aggregation,
+                        default_text_column=default_text_column,
+                        default_output_schema=transformer_config.get("output_schema"),
+                        default_net_sentiment_formula=transformer_config.get(
+                            "net_sentiment_formula",
+                            "positive_minus_negative",
+                        ),
+                    )
+                )
+        return expanded_configs
+
+    @staticmethod
+    def _transformer_config_enabled(transformer_config: Optional[dict]) -> bool:
+        if not transformer_config:
+            return False
+        return bool(
+            transformer_config.get(
+                "enabled",
+                transformer_config.get("models") or transformer_config.get("transformers"),
+            )
+        )
 
     def load_data(self) -> pd.DataFrame:
         """Load the input file via :class:`TextLoader` and return the raw DataFrame."""
@@ -112,17 +235,93 @@ class AutoEconSentiment:
         logger.info("Lexical sentiment analysis complete.")
         return self.df_sent_lexical
 
+    def analyze_sentiment_transformer(
+        self,
+        transformer_config: dict,
+    ) -> pd.DataFrame:
+        """Score cleaned text with one or more optional transformer models."""
+        if self.df_clean is None:
+            raise SentimentAnalysisError("Clean data before transformer sentiment analysis.")
+
+        if not self._transformer_config_enabled(transformer_config):
+            logger.info("Skipping transformer sentiment analysis: disabled in config.")
+            return pd.DataFrame()
+
+        try:
+            from auto_econ_sentiment.models.sentiment_transformers import SentimentTransformers
+        except ImportError as e:
+            raise SentimentAnalysisError(str(e)) from e
+
+        default_text_column = transformer_config.get("text_column_transformer", "text_clean")
+        model_configs = self._expand_transformer_model_configs(
+            transformer_config=transformer_config,
+            default_text_column=default_text_column,
+        )
+        df_sent_transformer = []
+        df_sentence_probabilities = []
+
+        for model_config in model_configs:
+            model_short = model_config["model_name_short"]
+            text_column = model_config.get("text_column_transformer", default_text_column)
+            aggregation = model_config.get("aggregation", "byalltext")
+            if text_column not in self.df_clean.columns:
+                raise SentimentAnalysisError(f"Transformer text column '{text_column}' not found.")
+
+            try:
+                pipe_transformer = SentimentTransformers(
+                    df_input=self.df_clean.dropna(subset=[text_column]),
+                    text_column=text_column,
+                    model_name=model_config["model_name"],
+                    model_name_short=model_short,
+                    label_map=model_config["label_map"],
+                    num_labels=model_config.get("num_labels"),
+                    max_length=model_config.get("max_length", 512),
+                    batch_size=model_config.get("batch_size", 16),
+                    output_schema=model_config.get("output_schema"),
+                    net_sentiment_formula=model_config.get("net_sentiment_formula", "positive_minus_negative"),
+                    huggingface_token=model_config.get("huggingface_token"),
+                    device=model_config.get("device"),
+                )
+                result = pipe_transformer.sentiment_pipeline(
+                    aggregation=aggregation,
+                    sentence_probability_cutoff=model_config.get("sentence_probability_cutoff", 0.7),
+                )
+            except Exception as e:
+                raise SentimentAnalysisError(f"Error in transformer analysis for {model_short}: {e}") from e
+
+            if aggregation == "bysentence":
+                df_agg, df_prob = result
+                df_sent_transformer.append(df_agg)
+                df_sentence_probabilities.append(df_prob)
+            else:
+                df_model = (
+                    result
+                    .set_index("id_text")
+                    .filter(regex=f"^{model_short}_")
+                )
+                df_sent_transformer.append(df_model)
+
+            logger.info("Completed transformer analysis for %s", model_short)
+
+        self.df_sent_transformer = pd.concat(df_sent_transformer, axis=1)
+        if df_sentence_probabilities:
+            self.df_transformer_sentence_probabilities = pd.concat(df_sentence_probabilities, axis=1)
+        logger.info("Transformer sentiment analysis complete.")
+        return self.df_sent_transformer
+
     def run(
         self,
         clean_config: Optional[dict],
         dictionaries: Union[dict, list, None],
         aggregation_methods: Optional[list],
         export_results: bool,
+        transformer_config: Optional[dict] = None,
     ) -> tuple[Optional[pd.DataFrame], Optional[pd.DataFrame], Optional[pd.DataFrame]]:
         """Run the full pipeline (load → clean → score → optional export).
 
-        Returns a ``(df_raw, df_clean, df_sent_lexical)`` tuple. Any stage that is
-        skipped (e.g. no dictionaries supplied) yields ``None`` in its slot.
+        Returns the historical ``(df_raw, df_clean, df_sent_lexical)`` tuple.
+        Optional transformer results are stored on ``df_sent_transformer`` and
+        ``df_transformer_sentence_probabilities``.
         """
         logger.info("Starting AutoEconSentiment pipeline...")
         self.load_data()
@@ -136,6 +335,9 @@ class AutoEconSentiment:
         else:
             logger.warning("Skipping lexical sentiment analysis: no dictionaries or aggregation methods provided.")
 
+        if self._transformer_config_enabled(transformer_config):
+            self.analyze_sentiment_transformer(transformer_config=transformer_config)
+
         if export_results:
             logger.info("Exporting results...")
             dataframes_to_concat = []
@@ -145,6 +347,21 @@ class AutoEconSentiment:
                 self.df_sent_lexical.to_parquet(f"{self.export_path}/sentiment_lexical.parquet.gzip", compression="gzip", index=False)
                 dataframes_to_concat.append(
                     self.df_sent_lexical.reset_index().set_index("id_text").filter(regex="sentiment")
+                )
+            if self.df_sent_transformer is not None:
+                self.df_sent_transformer.reset_index().to_parquet(
+                    f"{self.export_path}/sentiment_transformer.parquet.gzip",
+                    compression="gzip",
+                    index=False,
+                )
+                dataframes_to_concat.append(
+                    self.df_sent_transformer.reset_index().set_index("id_text").filter(regex="sentiment|label|probability")
+                )
+            if self.df_transformer_sentence_probabilities is not None:
+                self.df_transformer_sentence_probabilities.reset_index().to_parquet(
+                    f"{self.export_path}/sentiment_transformer_sentence_probabilities.parquet.gzip",
+                    compression="gzip",
+                    index=False,
                 )
 
             if dataframes_to_concat:
@@ -201,10 +418,19 @@ if __name__ == "__main__":
             export_path=config["output"]["export_path"],
         )
         lexical_config = config.get("models", {}).get("lexical", {})
+        models_config = config.get("models", {})
+        transformer_config = models_config.get("transformer")
+        if transformer_config is None and models_config.get("transformers") is not None:
+            transformer_config = {
+                "enabled": bool(models_config.get("transformers")),
+                "models": models_config.get("transformers", []),
+                **models_config.get("transformers_config", {}),
+            }
         analyzer.run(
             clean_config=config.get("cleaning", {}),
             dictionaries=lexical_config.get("dictionaries", {}),
             aggregation_methods=lexical_config.get("aggregation_methods", []),
             export_results=config["output"].get("export_results", True),
+            transformer_config=transformer_config or {},
         )
         logger.info("Pipeline run with params.yaml configuration completed.")

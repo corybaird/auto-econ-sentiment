@@ -16,6 +16,82 @@ models:
       unstemmed: [correa, hubert, lm, hiv]
       stemmed: [bn, ap]
     aggregation_methods: [posneg, allwords]
+  transformer:
+    enabled: false
+    text_column_transformer: text_clean
+    aggregation_methods: [bysentence]
+    output_schema: shares
+    net_sentiment_formula: positive_minus_negative
+    models:
+      - name: gtfintechlab/FOMC-RoBERTa
+        short_name: fomc
+        num_labels: 3
+        max_length: 512
+        batch_size: 8
+        label_mapping:
+          LABEL_0: positive
+          LABEL_1: negative
+          LABEL_2: neutral
+        sentiment_values:
+          positive: 1
+          negative: -1
+          neutral: 0
+
+      - name: gtfintechlab/model_WCB_stance_label
+        short_name: gtstance
+        num_labels: 4
+        max_length: 512
+        batch_size: 8
+        label_mapping:
+          LABEL_0: negative
+          LABEL_1: positive
+          LABEL_2: neutral
+          LABEL_3: irrelevant
+        sentiment_values:
+          negative: 1
+          positive: -1
+          neutral: 0
+          irrelevant: 0
+
+      - name: Moritz-Pfeifer/CentralBankRoBERTa-sentiment-classifier
+        short_name: cbroberta
+        num_labels: 2
+        max_length: 512
+        batch_size: 8
+        label_mapping:
+          positive: positive
+          negative: negative
+        sentiment_values:
+          positive: 1
+          negative: -1
+
+      - name: ProsusAI/finbert
+        short_name: finbertpro
+        num_labels: 3
+        max_length: 512
+        batch_size: 8
+        label_mapping:
+          neutral: neutral
+          positive: positive
+          negative: negative
+        sentiment_values:
+          neutral: 0
+          positive: 1
+          negative: -1
+
+      - name: yiyanghkust/finbert-tone
+        short_name: finbertyi
+        num_labels: 3
+        max_length: 512
+        batch_size: 8
+        label_mapping:
+          Neutral: neutral
+          Positive: positive
+          Negative: negative
+        sentiment_values:
+          neutral: 0
+          positive: 1
+          negative: -1
 
 cleaning:
   clean_html: true
@@ -27,4 +103,3 @@ cleaning:
   ]
   tokenize: true
   stem: true
-
