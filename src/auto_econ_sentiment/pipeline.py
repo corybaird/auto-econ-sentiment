@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class AutoEconSentiment:
     """End-to-end pipeline that loads a text corpus, cleans it, and scores it
-    with one or more lexical sentiment dictionaries."""
+    with lexical dictionaries and optional transformer models."""
 
     def __init__(
         self,
@@ -319,8 +319,9 @@ class AutoEconSentiment:
     ) -> tuple[Optional[pd.DataFrame], Optional[pd.DataFrame], Optional[pd.DataFrame]]:
         """Run the full pipeline (load → clean → score → optional export).
 
-        Returns a ``(df_raw, df_clean, df_sent_lexical)`` tuple. Any stage that is
-        skipped (e.g. no dictionaries supplied) yields ``None`` in its slot.
+        Returns the historical ``(df_raw, df_clean, df_sent_lexical)`` tuple.
+        Optional transformer results are stored on ``df_sent_transformer`` and
+        ``df_transformer_sentence_probabilities``.
         """
         logger.info("Starting AutoEconSentiment pipeline...")
         self.load_data()

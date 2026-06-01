@@ -72,12 +72,14 @@ models:
 
 The transformer examples in `params.yaml` show the supported model-list format. More experimental transformer notes live locally in `docs/feedback/` when present.
 
+Transformer runs export `sentiment_transformer.parquet.gzip` and, for sentence-level aggregation, `sentiment_transformer_sentence_probabilities.parquet.gzip` alongside the existing lexical and combined output tables.
+
 ## What It Does
 
 - Loads CSV or parquet text data.
 - Cleans and normalizes economic text.
 - Scores text with multiple central bank and financial dictionaries.
-- Optionally scores text with transformer classifiers.
+- Optionally scores text with transformer classifiers using explicitly configured label mappings.
 - Exports cleaned text, matched words, counts, probabilities, and sentiment scores.
 - Makes dictionary and model disagreement visible for research workflows.
 

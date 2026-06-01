@@ -4,20 +4,22 @@ This document outlines the planned future features for `auto-econ-sentiment` and
 
 Research-planning notes, paper feedback, and transformer refactor scratch docs can live locally under `docs/feedback/`. That directory is ignored by git so exploratory notes can evolve without becoming release documentation.
 
-## Future Plans: `v0.2.0` (Transformer Integration)
-The next major objective is expanding the lexical pipeline to include optional Hugging Face transformer models. This release upgrades model coverage while maintaining the existing YAML-driven architecture and keeping transformer dependencies optional.
+## Next Release Candidate: `v0.2.0` (Optional Transformer Extension)
+The current transformer feature line expands the lexical pipeline to include optional Hugging Face transformer models. The release should upgrade model coverage while maintaining the existing YAML-driven architecture and keeping transformer dependencies optional.
 
-### Development Plan
-The implementation should follow these atomic branches (aligning with `workflows/branch-agent.md`):
+### Implemented Scope
+The transformer extension currently includes:
 
-1. **`add/transformer-dependencies`**
-   - Goal: Safely introduce `transformers`, `torch`, etc., to `pyproject.toml` (likely under an `[project.optional-dependencies]` group so users aren't forced to download heavy torch binaries unless needed).
-2. **`add/transformer-models-class`**
-   - Goal: Introduce `SentimentTransformersPipeline` into a new `src/models/sentiment_transformers.py` file.
-3. **`update/pipeline-transformer-integration`**
-   - Goal: Update `src/auto_econ_sentiment/pipeline.py` with `analyze_sentiment_transformer_sentence` and `analyze_sentiment_transformer_fulltext` methods.
-4. **`update/transformer-configs`**
-   - Goal: Update `params.yaml` structure to support transformer model specifications, configurations, huggingface tags, and cloud inference flags.
+1. `transformers` and `torch` as optional dependencies under the `transformers` extra.
+2. `SentimentTransformers` in `src/auto_econ_sentiment/models/sentiment_transformers.py`.
+3. Pipeline integration through `AutoEconSentiment.analyze_sentiment_transformer()`.
+4. YAML model configuration in `params.yaml`, with support for original-style `name`, `short_name`, `label_mapping`, and `sentiment_values` keys.
+5. Document-level and sentence-level aggregation modes.
+6. Harmonized positive, neutral, negative, share, and net-sentiment columns for comparable transformer outputs.
+7. Parquet exports for transformer sentiment tables and sentence probabilities.
+
+### Branching Note
+The optional transformer work should live on `feat/optional-transformer-extension`. Documentation-only branches stacked on top of it should target that branch as their PR base so transformer notebook and model changes do not appear as unrelated docs changes.
 
 ---
 
@@ -28,7 +30,7 @@ This repository adheres strictly to **Semantic Versioning** (`vMAJOR.MINOR.PATCH
 ### How GitHub Releases and PyPI Publishing Are Managed
 Currently, in `v0.1.0`, your repository is configured with a GitHub Actions workflow to auto-publish releases. This means the process is partially automated, but triggered by a manual Git action.
 
-When deploying a new version (e.g., the upcoming `v0.2.0`), follow these exact steps:
+When deploying a new version, follow these exact steps after reviewing and merging the relevant PRs into `main`:
 
 #### Step 1: Prepare the Codebase for Release
 1. Update `pyproject.toml`: Change `version = "0.2.0"`.

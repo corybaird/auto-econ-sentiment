@@ -70,4 +70,10 @@ models:
           negative: -1
 ```
 
+Then run the YAML-configured pipeline:
+
+```bash
+uv run python -m src.auto_econ_sentiment.pipeline
 ```
+
+For sentence-level aggregation, the pipeline writes both `sentiment_transformer.parquet.gzip` and `sentiment_transformer_sentence_probabilities.parquet.gzip`.

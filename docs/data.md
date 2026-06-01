@@ -43,7 +43,10 @@ Transformer columns are prefixed by `model_name_short`, for example:
 fomc_label
 fomc_probability_0
 fomc_sentiment_byalltext
+fomc_countsentence_LABEL_0
 fomc_count_positive
 fomc_share_negative
 fomc_net_sentiment
 ```
+
+`bysentence` aggregation first records raw per-sentence probabilities, then counts labels that pass the configured probability cutoff and aggregates those counts back to `id_text`. When `output_schema: shares` is enabled, the model-specific labels are also converted into harmonized positive, neutral, and negative counts and shares.

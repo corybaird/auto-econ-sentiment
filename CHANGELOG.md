@@ -6,6 +6,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ---
 
+## [Unreleased]
+
+### Added
+- Added optional Hugging Face transformer sentiment support behind the `transformers` extra so the base lexical package remains lightweight.
+- Added `SentimentTransformers` with lazy `torch`/`transformers` imports, explicit model label mapping, batched inference, and configurable device selection.
+- Added YAML-driven transformer configuration in `params.yaml`, including support for both package-native config keys and original-style `name`/`short_name`/`label_mapping`/`sentiment_values` model lists.
+- Added document-level (`byalltext`) and sentence-level (`bysentence`) transformer aggregation, including harmonized positive, neutral, negative, share, and net-sentiment outputs.
+- Added transformer parquet exports for model outputs and sentence probabilities.
+- Added `notebooks/autoecon_transformers.ipynb` for optional transformer workflows.
+- Added transformer-focused tests covering optional imports, config coercion, label-map behavior, sentence aggregation, harmonized outputs, and no-download model test doubles.
+
+### Changed
+- Updated the pipeline to run lexical and optional transformer sentiment through the same load, clean, score, and export workflow.
+- Updated README and docs to split architecture, data/output, examples, and roadmap content into focused documentation pages.
+
 ## [0.1.2] - 2026-05-15
 
 ### Added
