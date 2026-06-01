@@ -6,7 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ---
 
-## [Unreleased]
+## [0.2.0] - 2026-06-02
 
 ### Added
 - Added optional Hugging Face transformer sentiment support behind the `transformers` extra so the base lexical package remains lightweight.
@@ -20,6 +20,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 ### Changed
 - Updated the pipeline to run lexical and optional transformer sentiment through the same load, clean, score, and export workflow.
 - Updated README and docs to split architecture, data/output, examples, and roadmap content into focused documentation pages.
+
+### Fixed
+- Fixed lexical `allwords` scoring so it uses the active text column override instead of falling back to the default token column.
 
 ## [0.1.2] - 2026-05-15
 
