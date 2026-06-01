@@ -70,8 +70,4 @@ models:
           negative: -1
 ```
 
-For a runnable walkthrough that does not require downloading a Hugging Face model, open:
-
-```text
-notebooks/autoecon_transformers.ipynb
 ```
