@@ -93,6 +93,8 @@ class AutoEconSentiment:
         default_text_column: str,
         default_output_schema: Optional[str],
         default_net_sentiment_formula: str,
+        default_min_sentence_chars: int,
+        default_sentence_probability_cutoff: float,
     ) -> dict:
         coerced = {
             **model_config,
@@ -103,6 +105,11 @@ class AutoEconSentiment:
             "net_sentiment_formula": model_config.get(
                 "net_sentiment_formula",
                 default_net_sentiment_formula,
+            ),
+            "min_sentence_chars": model_config.get("min_sentence_chars", default_min_sentence_chars),
+            "sentence_probability_cutoff": model_config.get(
+                "sentence_probability_cutoff",
+                default_sentence_probability_cutoff,
             ),
             "aggregation": cls._normalize_transformer_aggregation(
                 model_config.get("aggregation", aggregation)
@@ -144,6 +151,11 @@ class AutoEconSentiment:
                         default_net_sentiment_formula=transformer_config.get(
                             "net_sentiment_formula",
                             "positive_minus_negative",
+                        ),
+                        default_min_sentence_chars=transformer_config.get("min_sentence_chars", 20),
+                        default_sentence_probability_cutoff=transformer_config.get(
+                            "sentence_probability_cutoff",
+                            0.7,
                         ),
                     )
                 )
@@ -269,7 +281,7 @@ class AutoEconSentiment:
                 raise SentimentAnalysisError(f"Transformer text column '{text_column}' not found.")
 
             if aggregation == "bysentence":
-                segmenter = TextSegmenter(text_column=text_column, min_chars=model_config.get("min_sentence_chars", 20))
+                segmenter = TextSegmenter(text_column=text_column, min_chars=model_config["min_sentence_chars"])
                 try:
                     df_model_input = segmenter.run(self.df_clean)
                 except ValueError as exc:
@@ -294,7 +306,7 @@ class AutoEconSentiment:
                 )
                 result = pipe_transformer.sentiment_pipeline(
                     aggregation=aggregation,
-                    sentence_probability_cutoff=model_config.get("sentence_probability_cutoff", 0.7),
+                    sentence_probability_cutoff=model_config["sentence_probability_cutoff"],
                 )
             except Exception as e:
                 raise SentimentAnalysisError(f"Error in transformer analysis for {model_short}: {e}") from e
