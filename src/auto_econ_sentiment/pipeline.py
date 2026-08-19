@@ -162,6 +162,40 @@ class AutoEconSentiment:
         return expanded_configs
 
     @staticmethod
+    def resolve_lexical_config(config: dict) -> dict:
+        """Read the lexical block from a top-level ``lexical`` key.
+
+        Falls back to the legacy nested ``models.lexical`` layout so existing
+        configuration files keep working.
+        """
+        lexical_config = config.get("lexical")
+        if lexical_config is None:
+            lexical_config = config.get("models", {}).get("lexical", {})
+        return lexical_config or {}
+
+    @staticmethod
+    def resolve_transformer_config(config: dict) -> dict:
+        """Read the transformer block from a top-level ``transformer`` key.
+
+        Falls back to the legacy nested ``models.transformer`` layout, and to
+        the older ``models.transformers`` list form, so existing configuration
+        files keep working.
+        """
+        transformer_config = config.get("transformer")
+        if transformer_config is not None:
+            return transformer_config
+
+        models_config = config.get("models") or {}
+        transformer_config = models_config.get("transformer")
+        if transformer_config is None and models_config.get("transformers") is not None:
+            transformer_config = {
+                "enabled": bool(models_config.get("transformers")),
+                "models": models_config.get("transformers", []),
+                **models_config.get("transformers_config", {}),
+            }
+        return transformer_config or {}
+
+    @staticmethod
     def _transformer_config_enabled(transformer_config: Optional[dict]) -> bool:
         if not transformer_config:
             return False
@@ -439,15 +473,8 @@ if __name__ == "__main__":
             date_column=config["input"]["date_column"],
             export_path=config["output"]["export_path"],
         )
-        lexical_config = config.get("models", {}).get("lexical", {})
-        models_config = config.get("models", {})
-        transformer_config = models_config.get("transformer")
-        if transformer_config is None and models_config.get("transformers") is not None:
-            transformer_config = {
-                "enabled": bool(models_config.get("transformers")),
-                "models": models_config.get("transformers", []),
-                **models_config.get("transformers_config", {}),
-            }
+        lexical_config = AutoEconSentiment.resolve_lexical_config(config)
+        transformer_config = AutoEconSentiment.resolve_transformer_config(config)
         analyzer.run(
             clean_config=config.get("cleaning", {}),
             dictionaries=lexical_config.get("dictionaries", {}),

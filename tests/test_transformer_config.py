@@ -92,3 +92,52 @@ def test_original_style_transformer_config_validates_sentiment_values():
             transformer_config=config,
             default_text_column="text_clean",
         )
+
+
+def test_flat_lexical_key_is_resolved():
+    config = {"lexical": {"dictionaries": {"unstemmed": ["lm"]}, "aggregation_methods": ["posneg"]}}
+
+    assert AutoEconSentiment.resolve_lexical_config(config)["aggregation_methods"] == ["posneg"]
+
+
+def test_nested_lexical_key_still_resolves_for_legacy_configs():
+    config = {"models": {"lexical": {"aggregation_methods": ["allwords"]}}}
+
+    assert AutoEconSentiment.resolve_lexical_config(config)["aggregation_methods"] == ["allwords"]
+
+
+def test_flat_lexical_key_takes_precedence_over_nested():
+    config = {
+        "lexical": {"aggregation_methods": ["posneg"]},
+        "models": {"lexical": {"aggregation_methods": ["allwords"]}},
+    }
+
+    assert AutoEconSentiment.resolve_lexical_config(config)["aggregation_methods"] == ["posneg"]
+
+
+def test_missing_lexical_key_resolves_to_empty_dict():
+    assert AutoEconSentiment.resolve_lexical_config({}) == {}
+
+
+def test_flat_transformer_key_is_resolved():
+    config = {"transformer": {"enabled": True, "models": [{"name": "x", "short_name": "x"}]}}
+
+    assert AutoEconSentiment.resolve_transformer_config(config)["enabled"] is True
+
+
+def test_nested_transformer_key_still_resolves_for_legacy_configs():
+    config = {"models": {"transformer": {"enabled": True, "output_schema": "shares"}}}
+
+    assert AutoEconSentiment.resolve_transformer_config(config)["output_schema"] == "shares"
+
+
+def test_legacy_transformers_list_form_still_resolves():
+    config = {"models": {"transformers": [{"name": "x", "short_name": "x"}]}}
+    resolved = AutoEconSentiment.resolve_transformer_config(config)
+
+    assert resolved["enabled"] is True
+    assert resolved["models"] == [{"name": "x", "short_name": "x"}]
+
+
+def test_missing_transformer_key_resolves_to_empty_dict():
+    assert AutoEconSentiment.resolve_transformer_config({}) == {}

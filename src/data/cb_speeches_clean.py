@@ -82,7 +82,7 @@ class CBSpeechesSentiment:
                 export_path=str(export_path),
             )
 
-            lexical_config = self.config.get("models", {}).get("lexical", {})
+            lexical_config = AutoEconSentiment.resolve_lexical_config(self.config)
             try:
                 analyzer.run(
                     clean_config=self.config.get("cleaning", {}),
