@@ -9,6 +9,7 @@ from pathlib import Path
 from auto_econ_sentiment.utils.load_yaml import load_yaml_config
 from auto_econ_sentiment.clean.text_loader import TextLoader
 from auto_econ_sentiment.clean.text_clean import TextCleaner
+from auto_econ_sentiment.clean.text_segmentation import TextSegmenter
 from auto_econ_sentiment.models.sentiment_lexical import SentimentLexical
 from auto_econ_sentiment.exceptions import DataLoadError, SentimentAnalysisError
 
@@ -267,9 +268,18 @@ class AutoEconSentiment:
             if text_column not in self.df_clean.columns:
                 raise SentimentAnalysisError(f"Transformer text column '{text_column}' not found.")
 
+            if aggregation == "bysentence":
+                segmenter = TextSegmenter(text_column=text_column, min_chars=model_config.get("min_sentence_chars", 20))
+                try:
+                    df_model_input = segmenter.run(self.df_clean)
+                except ValueError as exc:
+                    raise SentimentAnalysisError(str(exc)) from exc
+            else:
+                df_model_input = self.df_clean.dropna(subset=[text_column])
+
             try:
                 pipe_transformer = SentimentTransformers(
-                    df_input=self.df_clean.dropna(subset=[text_column]),
+                    df_input=df_model_input,
                     text_column=text_column,
                     model_name=model_config["model_name"],
                     model_name_short=model_short,
