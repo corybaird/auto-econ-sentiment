@@ -6,6 +6,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ---
 
+## [0.3.0] - 2026-08-19
+
+### Added
+- Added `TextSegmenter` in `clean/text_segmentation.py` to split documents into sentence-level rows, using NLTK `sent_tokenize` with a regex boundary fallback when NLTK or its `punkt` data is unavailable.
+- Added `min_sentence_chars` and `sentence_probability_cutoff` as transformer configuration keys, resolvable at the transformer level with per-model overrides.
+- Added `resolve_lexical_config` and `resolve_transformer_config` helpers that read flat top-level config keys and fall back to the legacy nested layouts.
+- Added tests covering sentence segmentation, sentence-level aggregation arithmetic, and config resolution.
+
+### Changed
+- Changed `params.yaml` to promote `lexical` and `transformer` to top-level keys, replacing the `models` wrapper, with labeled section comments. Existing nested configs continue to work through the resolver fallbacks.
+- Updated README and `docs/examples.md` transformer examples to the flat configuration layout.
+
+### Fixed
+- Fixed transformer `bysentence` aggregation scoring whole documents instead of sentences. `sentiment_bysentence` aggregates rows by `id_text`, but the pipeline passed `df_clean` through unsplit, so each document was a single row. Sentence counts collapsed to 0 or 1 and the resulting score could only ever be `+1`, `-1`, or `0`, silently returning document-level classification under sentence-level column names.
+- Fixed `sentence_probability_cutoff` being unreachable from YAML. It was read from the model config but never populated, so the 0.7 cutoff was effectively hard-coded.
+
 ## [0.2.0] - 2026-06-02
 
 ### Added

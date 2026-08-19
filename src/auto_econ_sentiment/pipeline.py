@@ -9,6 +9,7 @@ from pathlib import Path
 from auto_econ_sentiment.utils.load_yaml import load_yaml_config
 from auto_econ_sentiment.clean.text_loader import TextLoader
 from auto_econ_sentiment.clean.text_clean import TextCleaner
+from auto_econ_sentiment.clean.text_segmentation import TextSegmenter
 from auto_econ_sentiment.models.sentiment_lexical import SentimentLexical
 from auto_econ_sentiment.exceptions import DataLoadError, SentimentAnalysisError
 
@@ -92,6 +93,8 @@ class AutoEconSentiment:
         default_text_column: str,
         default_output_schema: Optional[str],
         default_net_sentiment_formula: str,
+        default_min_sentence_chars: int,
+        default_sentence_probability_cutoff: float,
     ) -> dict:
         coerced = {
             **model_config,
@@ -102,6 +105,11 @@ class AutoEconSentiment:
             "net_sentiment_formula": model_config.get(
                 "net_sentiment_formula",
                 default_net_sentiment_formula,
+            ),
+            "min_sentence_chars": model_config.get("min_sentence_chars", default_min_sentence_chars),
+            "sentence_probability_cutoff": model_config.get(
+                "sentence_probability_cutoff",
+                default_sentence_probability_cutoff,
             ),
             "aggregation": cls._normalize_transformer_aggregation(
                 model_config.get("aggregation", aggregation)
@@ -144,9 +152,48 @@ class AutoEconSentiment:
                             "net_sentiment_formula",
                             "positive_minus_negative",
                         ),
+                        default_min_sentence_chars=transformer_config.get("min_sentence_chars", 20),
+                        default_sentence_probability_cutoff=transformer_config.get(
+                            "sentence_probability_cutoff",
+                            0.7,
+                        ),
                     )
                 )
         return expanded_configs
+
+    @staticmethod
+    def resolve_lexical_config(config: dict) -> dict:
+        """Read the lexical block from a top-level ``lexical`` key.
+
+        Falls back to the legacy nested ``models.lexical`` layout so existing
+        configuration files keep working.
+        """
+        lexical_config = config.get("lexical")
+        if lexical_config is None:
+            lexical_config = config.get("models", {}).get("lexical", {})
+        return lexical_config or {}
+
+    @staticmethod
+    def resolve_transformer_config(config: dict) -> dict:
+        """Read the transformer block from a top-level ``transformer`` key.
+
+        Falls back to the legacy nested ``models.transformer`` layout, and to
+        the older ``models.transformers`` list form, so existing configuration
+        files keep working.
+        """
+        transformer_config = config.get("transformer")
+        if transformer_config is not None:
+            return transformer_config
+
+        models_config = config.get("models") or {}
+        transformer_config = models_config.get("transformer")
+        if transformer_config is None and models_config.get("transformers") is not None:
+            transformer_config = {
+                "enabled": bool(models_config.get("transformers")),
+                "models": models_config.get("transformers", []),
+                **models_config.get("transformers_config", {}),
+            }
+        return transformer_config or {}
 
     @staticmethod
     def _transformer_config_enabled(transformer_config: Optional[dict]) -> bool:
@@ -267,9 +314,18 @@ class AutoEconSentiment:
             if text_column not in self.df_clean.columns:
                 raise SentimentAnalysisError(f"Transformer text column '{text_column}' not found.")
 
+            if aggregation == "bysentence":
+                segmenter = TextSegmenter(text_column=text_column, min_chars=model_config["min_sentence_chars"])
+                try:
+                    df_model_input = segmenter.run(self.df_clean)
+                except ValueError as exc:
+                    raise SentimentAnalysisError(str(exc)) from exc
+            else:
+                df_model_input = self.df_clean.dropna(subset=[text_column])
+
             try:
                 pipe_transformer = SentimentTransformers(
-                    df_input=self.df_clean.dropna(subset=[text_column]),
+                    df_input=df_model_input,
                     text_column=text_column,
                     model_name=model_config["model_name"],
                     model_name_short=model_short,
@@ -284,7 +340,7 @@ class AutoEconSentiment:
                 )
                 result = pipe_transformer.sentiment_pipeline(
                     aggregation=aggregation,
-                    sentence_probability_cutoff=model_config.get("sentence_probability_cutoff", 0.7),
+                    sentence_probability_cutoff=model_config["sentence_probability_cutoff"],
                 )
             except Exception as e:
                 raise SentimentAnalysisError(f"Error in transformer analysis for {model_short}: {e}") from e
@@ -417,15 +473,8 @@ if __name__ == "__main__":
             date_column=config["input"]["date_column"],
             export_path=config["output"]["export_path"],
         )
-        lexical_config = config.get("models", {}).get("lexical", {})
-        models_config = config.get("models", {})
-        transformer_config = models_config.get("transformer")
-        if transformer_config is None and models_config.get("transformers") is not None:
-            transformer_config = {
-                "enabled": bool(models_config.get("transformers")),
-                "models": models_config.get("transformers", []),
-                **models_config.get("transformers_config", {}),
-            }
+        lexical_config = AutoEconSentiment.resolve_lexical_config(config)
+        transformer_config = AutoEconSentiment.resolve_transformer_config(config)
         analyzer.run(
             clean_config=config.get("cleaning", {}),
             dictionaries=lexical_config.get("dictionaries", {}),

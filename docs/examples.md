@@ -50,24 +50,25 @@ uv sync --extra transformers
 ```
 
 ```yaml
-models:
-  transformer:
-    enabled: true
-    text_column_transformer: text_clean
-    aggregation_methods: [bysentence]
-    output_schema: shares
-    models:
-      - name: ProsusAI/finbert
-        short_name: finbertpro
-        num_labels: 3
-        label_mapping:
-          neutral: neutral
-          positive: positive
-          negative: negative
-        sentiment_values:
-          neutral: 0
-          positive: 1
-          negative: -1
+transformer:
+  enabled: true
+  text_column_transformer: text_clean
+  aggregation_methods: [bysentence]
+  output_schema: shares
+  min_sentence_chars: 20
+  sentence_probability_cutoff: 0.7
+  models:
+    - name: ProsusAI/finbert
+      short_name: finbertpro
+      num_labels: 3
+      label_mapping:
+        neutral: neutral
+        positive: positive
+        negative: negative
+      sentiment_values:
+        neutral: 0
+        positive: 1
+        negative: -1
 ```
 
 Then run the YAML-configured pipeline:

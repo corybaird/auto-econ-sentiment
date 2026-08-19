@@ -50,24 +50,25 @@ uv sync --extra transformers
 Then enable transformer models in `params.yaml`:
 
 ```yaml
-models:
-  transformer:
-    enabled: true
-    text_column_transformer: text_clean
-    aggregation_methods: [bysentence]
-    output_schema: shares
-    models:
-      - name: gtfintechlab/FOMC-RoBERTa
-        short_name: fomc
-        num_labels: 3
-        label_mapping:
-          LABEL_0: positive
-          LABEL_1: negative
-          LABEL_2: neutral
-        sentiment_values:
-          positive: 1
-          negative: -1
-          neutral: 0
+transformer:
+  enabled: true
+  text_column_transformer: text_clean
+  aggregation_methods: [bysentence]
+  output_schema: shares
+  min_sentence_chars: 20
+  sentence_probability_cutoff: 0.7
+  models:
+    - name: gtfintechlab/FOMC-RoBERTa
+      short_name: fomc
+      num_labels: 3
+      label_mapping:
+        LABEL_0: positive
+        LABEL_1: negative
+        LABEL_2: neutral
+      sentiment_values:
+        positive: 1
+        negative: -1
+        neutral: 0
 ```
 
 The transformer examples in `params.yaml` show the supported model-list format. More experimental transformer notes live locally in `docs/feedback/` when present.
