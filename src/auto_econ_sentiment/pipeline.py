@@ -95,6 +95,7 @@ class AutoEconSentiment:
         default_net_sentiment_formula: str,
         default_min_sentence_chars: int,
         default_sentence_probability_cutoff: float,
+        default_sentence_probability_aggregation: str = "cutoff",
     ) -> dict:
         coerced = {
             **model_config,
@@ -110,6 +111,10 @@ class AutoEconSentiment:
             "sentence_probability_cutoff": model_config.get(
                 "sentence_probability_cutoff",
                 default_sentence_probability_cutoff,
+            ),
+            "sentence_probability_aggregation": model_config.get(
+                "sentence_probability_aggregation",
+                default_sentence_probability_aggregation,
             ),
             "aggregation": cls._normalize_transformer_aggregation(
                 model_config.get("aggregation", aggregation)
@@ -156,6 +161,10 @@ class AutoEconSentiment:
                         default_sentence_probability_cutoff=transformer_config.get(
                             "sentence_probability_cutoff",
                             0.7,
+                        ),
+                        default_sentence_probability_aggregation=transformer_config.get(
+                            "sentence_probability_aggregation",
+                            "cutoff",
                         ),
                     )
                 )
@@ -341,6 +350,9 @@ class AutoEconSentiment:
                 result = pipe_transformer.sentiment_pipeline(
                     aggregation=aggregation,
                     sentence_probability_cutoff=model_config["sentence_probability_cutoff"],
+                    sentence_probability_aggregation=model_config.get(
+                        "sentence_probability_aggregation", "cutoff"
+                    ),
                 )
             except Exception as e:
                 raise SentimentAnalysisError(f"Error in transformer analysis for {model_short}: {e}") from e

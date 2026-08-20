@@ -61,9 +61,10 @@ transformer:
   output_schema: shares
   net_sentiment_formula: positive_minus_negative
   # Sentence-aggregation settings (used when aggregation_methods includes bysentence).
-  # Both can be overridden per model in the models list below.
+  # All can be overridden per model in the models list below.
   min_sentence_chars: 20
   sentence_probability_cutoff: 0.7
+  sentence_probability_aggregation: cutoff
   models:
     - name: gtfintechlab/FOMC-RoBERTa
       short_name: fomc
