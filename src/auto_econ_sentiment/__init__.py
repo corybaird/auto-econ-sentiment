@@ -11,6 +11,7 @@ from auto_econ_sentiment.models.sentiment_transformers import SentimentTransform
 from auto_econ_sentiment.models.sentiment_llm import SentimentLLM
 from auto_econ_sentiment.clean.text_loader import TextLoader
 from auto_econ_sentiment.clean.text_clean import TextCleaner
+from auto_econ_sentiment.clean.text_segmentation import TextSegmenter, ParagraphSegmenter
 from auto_econ_sentiment.exceptions import (
     AutoEconSentimentError,
     ConfigurationError,
@@ -25,6 +26,8 @@ __all__ = [
     "SentimentLLM",
     "TextLoader",
     "TextCleaner",
+    "TextSegmenter",
+    "ParagraphSegmenter",
     "AutoEconSentimentError",
     "ConfigurationError",
     "DataLoadError",
