@@ -20,6 +20,8 @@ Input files must contain the configured text and date columns from `params.yaml`
 | `sentiment_lexical.parquet.gzip` | Lexical counts, matched words, and sentiment scores. |
 | `sentiment_transformer.parquet.gzip` | Optional transformer labels, probabilities, counts, shares, and scores. |
 | `sentiment_transformer_sentence_probabilities.parquet.gzip` | Optional sentence-level transformer probabilities. |
+| `sentiment_llm.parquet.gzip` | Optional LLM polarities, confidences, scores, and metadata. |
+| `sentiment_llm_sentence_probabilities.parquet.gzip` | Optional sentence-level LLM polarities and confidences. |
 | `sentiment_all_results.parquet.gzip` | Combined output used by notebooks and paper scripts. |
 
 ## Lexical Columns
@@ -50,3 +52,28 @@ fomc_net_sentiment
 ```
 
 `bysentence` aggregation first records raw per-sentence probabilities, then counts labels that pass the configured probability cutoff and aggregates those counts back to `id_text`. When `output_schema: shares` is enabled, the model-specific labels are also converted into harmonized positive, neutral, and negative counts and shares.
+
+## LLM Columns
+
+LLM columns are prefixed by `model_name_short`, for example:
+
+```text
+llama3_polarity
+llama3_confidence
+llama3_sentiment_byalltext
+llama3_sentiment_bysentence
+llama3_count_positive
+llama3_count_neutral
+llama3_count_negative
+llama3_share_positive
+llama3_share_neutral
+llama3_share_negative
+llama3_net_sentiment
+llama3_provider
+llama3_model
+llama3_prompt_version
+llama3_temperature
+```
+
+In document-level scoring (`byalltext`), the derived score is computed as `polarity * confidence` (continuous scale) or `{0, 1, 2}` mapped from polarity (discrete scale). In sentence-level scoring (`bysentence`), sentences meeting the `confidence_cutoff` are aggregated into harmonized counts, shares, and net sentiment. Metadata columns record provider, model name, prompt version, and temperature for governance and reproducibility.
+
