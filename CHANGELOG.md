@@ -6,6 +6,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ---
 
+## [Unreleased]
+
+### Added
+- Added `ParagraphSegmenter` in `clean/text_segmentation.py` to split documents into paragraph-level rows by blank lines, with configurable `paragraph_number` column.
+- Added `tokenizer_name` attribute on `TextSegmenter` to expose whether `nltk_punkt` or `regex_fallback` is active.
+- Added `require_nltk` parameter on `TextSegmenter` to fail fast when NLTK is unavailable.
+- Added `drop_invalid` parameter on `TextSegmenter` to filter non-sentential fragments (rosters, headers, no-verb items).
+- Added abbreviation and single-initial protection to the regex fallback tokenizer, preventing false splits on names like `St. Louis`, `Susan S. Bies`.
+- Added newline-boundary detection to both tokenizer paths, fixing 420 missed boundaries across `\n` after `.!?` or between lowercase/`:` and a capital.
+- Added fragment merging (`_merge_incomplete_sentences`) to rejoin lowercase- and punctuation-initial fragments into the preceding sentence.
+
+### Changed
+- Changed `TextSegmenter.split_text` to apply newline pre-splitting, abbreviation protection, and fragment merging in a unified pipeline before both NLTK and regex tokenizers.
+- Expanded `_FALLBACK_BOUNDARY` regex to include opening quote/bracket in the lookahead character class.
+
 ## [0.3.0] - 2026-08-19
 
 ### Added
