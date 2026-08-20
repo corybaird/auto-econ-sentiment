@@ -20,6 +20,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 ### Changed
 - Changed `TextSegmenter.split_text` to apply newline pre-splitting, abbreviation protection, and fragment merging in a unified pipeline before both NLTK and regex tokenizers.
 - Expanded `_FALLBACK_BOUNDARY` regex to include opening quote/bracket in the lookahead character class.
+- Added directory-of-`.txt` corpus loading in `TextLoader`, supporting flat directories as well as categorized subdirectories with `group_column`.
+- Added regex-based filename date parsing (`filename_date_pattern`), retaining unparseable dates as `NaT` with a logged warning.
+- Added `recursive` flag for directory traversal and automatic unique `id_column` generation for text corpora.
+- Added unit test suite for `TextLoader` covering directory loading, date parsing, group column attribution, recursive scanning, and edge cases in `tests/test_text_loader.py`.
+- Updated `docs/data.md` documentation for directory-of-txt loading and constructor parameters.
 
 ## [0.3.0] - 2026-08-19
 
