@@ -37,7 +37,10 @@ class AutoEconSentiment:
         self.df_sent_lexical: Optional[pd.DataFrame] = None
         self.df_sent_transformer: Optional[pd.DataFrame] = None
         self.df_transformer_sentence_probabilities: Optional[pd.DataFrame] = None
+        self.df_sent_llm: Optional[pd.DataFrame] = None
+        self.df_llm_sentence_probabilities: Optional[pd.DataFrame] = None
         logger.info("AutoEconSentiment initialized successfully")
+
 
     @staticmethod
     def _normalize_transformer_aggregation(aggregation: str) -> str:
@@ -206,6 +209,148 @@ class AutoEconSentiment:
             )
         )
 
+    @staticmethod
+    def _normalize_llm_aggregation(aggregation: str) -> str:
+        aggregation_aliases = {
+            "byalltext": "byalltext",
+            "full_text": "byalltext",
+            "fulltext": "byalltext",
+            "bysentence": "bysentence",
+            "sentence": "bysentence",
+            "sentence_pos": "bysentence",
+        }
+        try:
+            return aggregation_aliases[str(aggregation).lower()]
+        except KeyError as exc:
+            raise SentimentAnalysisError(
+                "Unknown LLM aggregation "
+                f"'{aggregation}'. Expected one of {sorted(aggregation_aliases)}."
+            ) from exc
+
+    @classmethod
+    def _coerce_llm_model_config(
+        cls,
+        model_config: dict,
+        aggregation: str,
+        default_text_column: str,
+        default_provider: str = "ollama",
+        default_base_url: Optional[str] = None,
+        default_api_key_env: Optional[str] = None,
+        default_prompt_template: Optional[str] = None,
+        default_output_scale: str = "continuous",
+        default_temperature: float = 0.0,
+        default_output_schema: Optional[str] = None,
+        default_net_sentiment_formula: str = "positive_minus_negative",
+        default_min_sentence_chars: int = 20,
+        default_confidence_cutoff: Optional[float] = None,
+    ) -> dict:
+        coerced = {
+            **model_config,
+            "model_name": model_config.get("model_name", model_config.get("name")),
+            "model_name_short": model_config.get("model_name_short", model_config.get("short_name")),
+            "provider": model_config.get("provider", default_provider),
+            "base_url": model_config.get("base_url", default_base_url),
+            "api_key_env": model_config.get("api_key_env", default_api_key_env),
+            "prompt_template": model_config.get("prompt_template", default_prompt_template),
+            "output_scale": model_config.get("output_scale", default_output_scale),
+            "temperature": model_config.get("temperature", default_temperature),
+            "text_column_llm": model_config.get("text_column_llm", default_text_column),
+            "output_schema": model_config.get("output_schema", default_output_schema),
+            "net_sentiment_formula": model_config.get(
+                "net_sentiment_formula",
+                default_net_sentiment_formula,
+            ),
+            "min_sentence_chars": model_config.get("min_sentence_chars", default_min_sentence_chars),
+            "confidence_cutoff": model_config.get(
+                "confidence_cutoff",
+                default_confidence_cutoff,
+            ),
+            "aggregation": cls._normalize_llm_aggregation(
+                model_config.get("aggregation", aggregation)
+            ),
+        }
+        if not coerced["model_name"] or not coerced["model_name_short"]:
+            raise SentimentAnalysisError(
+                "LLM model config requires model_name/name and "
+                "model_name_short/short_name."
+            )
+        return coerced
+
+    @classmethod
+    def _expand_llm_model_configs(
+        cls,
+        llm_config: dict,
+        default_text_column: str,
+    ) -> list[dict]:
+        model_configs = llm_config.get("models", llm_config.get("llms", []))
+        if isinstance(model_configs, dict):
+            model_configs = [model_configs]
+        if not model_configs:
+            raise SentimentAnalysisError("LLM config is enabled but no models are configured.")
+
+        aggregation_methods = llm_config.get("aggregation_methods")
+        if not aggregation_methods:
+            aggregation_methods = [llm_config.get("aggregation", "byalltext")]
+
+        expanded_configs = []
+        for model_config in model_configs:
+            for aggregation in aggregation_methods:
+                expanded_configs.append(
+                    cls._coerce_llm_model_config(
+                        model_config=model_config,
+                        aggregation=aggregation,
+                        default_text_column=default_text_column,
+                        default_provider=llm_config.get("provider", "ollama"),
+                        default_base_url=llm_config.get("base_url"),
+                        default_api_key_env=llm_config.get("api_key_env"),
+                        default_prompt_template=llm_config.get("prompt_template"),
+                        default_output_scale=llm_config.get("output_scale", "continuous"),
+                        default_temperature=llm_config.get("temperature", 0.0),
+                        default_output_schema=llm_config.get("output_schema"),
+                        default_net_sentiment_formula=llm_config.get(
+                            "net_sentiment_formula",
+                            "positive_minus_negative",
+                        ),
+                        default_min_sentence_chars=llm_config.get("min_sentence_chars", 20),
+                        default_confidence_cutoff=llm_config.get("confidence_cutoff"),
+                    )
+                )
+        return expanded_configs
+
+    @staticmethod
+    def resolve_llm_config(config: dict) -> dict:
+        """Read the llm block from a top-level ``llm`` key.
+
+        Falls back to the legacy nested ``models.llm`` layout, and to
+        the older ``models.llms`` list form, so existing configuration
+        files keep working.
+        """
+        llm_config = config.get("llm")
+        if llm_config is not None:
+            return llm_config
+
+        models_config = config.get("models") or {}
+        llm_config = models_config.get("llm")
+        if llm_config is None and models_config.get("llms") is not None:
+            llm_config = {
+                "enabled": bool(models_config.get("llms")),
+                "models": models_config.get("llms", []),
+                **models_config.get("llms_config", {}),
+            }
+        return llm_config or {}
+
+    @staticmethod
+    def _llm_config_enabled(llm_config: Optional[dict]) -> bool:
+        if not llm_config:
+            return False
+        return bool(
+            llm_config.get(
+                "enabled",
+                llm_config.get("models") or llm_config.get("llms"),
+            )
+        )
+
+
     def load_data(self) -> pd.DataFrame:
         """Load the input file via :class:`TextLoader` and return the raw DataFrame."""
         logger.info("Loading data...")
@@ -365,6 +510,90 @@ class AutoEconSentiment:
         logger.info("Transformer sentiment analysis complete.")
         return self.df_sent_transformer
 
+    def analyze_sentiment_llm(
+        self,
+        llm_config: dict,
+    ) -> pd.DataFrame:
+        """Score cleaned text with one or more optional LLM models."""
+        if self.df_clean is None:
+            raise SentimentAnalysisError("Clean data before LLM sentiment analysis.")
+
+        if not self._llm_config_enabled(llm_config):
+            logger.info("Skipping LLM sentiment analysis: disabled in config.")
+            return pd.DataFrame()
+
+        try:
+            from auto_econ_sentiment.models.sentiment_llm import SentimentLLM
+        except ImportError as e:
+            raise SentimentAnalysisError(str(e)) from e
+
+        default_text_column = llm_config.get("text_column_llm", "text_clean")
+        model_configs = self._expand_llm_model_configs(
+            llm_config=llm_config,
+            default_text_column=default_text_column,
+        )
+        df_sent_llm = []
+        df_sentence_probabilities = []
+
+        for model_config in model_configs:
+            model_short = model_config["model_name_short"]
+            text_column = model_config.get("text_column_llm", default_text_column)
+            aggregation = model_config.get("aggregation", "byalltext")
+            if text_column not in self.df_clean.columns:
+                raise SentimentAnalysisError(f"LLM text column '{text_column}' not found.")
+
+            if aggregation == "bysentence":
+                segmenter = TextSegmenter(text_column=text_column, min_chars=model_config["min_sentence_chars"])
+                try:
+                    df_model_input = segmenter.run(self.df_clean)
+                except ValueError as exc:
+                    raise SentimentAnalysisError(str(exc)) from exc
+            else:
+                df_model_input = self.df_clean.dropna(subset=[text_column])
+
+            try:
+                pipe_llm = SentimentLLM(
+                    df_input=df_model_input,
+                    text_column=text_column,
+                    model_name=model_config["model_name"],
+                    model_name_short=model_short,
+                    prompt_template=model_config.get("prompt_template"),
+                    provider=model_config.get("provider", "ollama"),
+                    base_url=model_config.get("base_url"),
+                    api_key_env=model_config.get("api_key_env"),
+                    output_scale=model_config.get("output_scale", "continuous"),
+                    temperature=model_config.get("temperature", 0.0),
+                    confidence_cutoff=model_config.get("confidence_cutoff"),
+                    output_schema=model_config.get("output_schema"),
+                    net_sentiment_formula=model_config.get("net_sentiment_formula", "positive_minus_negative"),
+                )
+                result = pipe_llm.sentiment_pipeline(
+                    aggregation=aggregation,
+                    confidence_cutoff=model_config.get("confidence_cutoff"),
+                )
+            except Exception as e:
+                raise SentimentAnalysisError(f"Error in LLM analysis for {model_short}: {e}") from e
+
+            if aggregation == "bysentence":
+                df_agg, df_prob = result
+                df_sent_llm.append(df_agg)
+                df_sentence_probabilities.append(df_prob)
+            else:
+                df_model = (
+                    result
+                    .set_index("id_text")
+                    .filter(regex=f"^{model_short}_")
+                )
+                df_sent_llm.append(df_model)
+
+            logger.info("Completed LLM analysis for %s", model_short)
+
+        self.df_sent_llm = pd.concat(df_sent_llm, axis=1) if df_sent_llm else pd.DataFrame()
+        if df_sentence_probabilities:
+            self.df_llm_sentence_probabilities = pd.concat(df_sentence_probabilities, axis=1)
+        logger.info("LLM sentiment analysis complete.")
+        return self.df_sent_llm
+
     def run(
         self,
         clean_config: Optional[dict],
@@ -372,12 +601,14 @@ class AutoEconSentiment:
         aggregation_methods: Optional[list],
         export_results: bool,
         transformer_config: Optional[dict] = None,
+        llm_config: Optional[dict] = None,
     ) -> tuple[Optional[pd.DataFrame], Optional[pd.DataFrame], Optional[pd.DataFrame]]:
         """Run the full pipeline (load → clean → score → optional export).
 
         Returns the historical ``(df_raw, df_clean, df_sent_lexical)`` tuple.
         Optional transformer results are stored on ``df_sent_transformer`` and
-        ``df_transformer_sentence_probabilities``.
+        ``df_transformer_sentence_probabilities``. Optional LLM results are stored
+        on ``df_sent_llm`` and ``df_llm_sentence_probabilities``.
         """
         logger.info("Starting AutoEconSentiment pipeline...")
         self.load_data()
@@ -393,6 +624,9 @@ class AutoEconSentiment:
 
         if self._transformer_config_enabled(transformer_config):
             self.analyze_sentiment_transformer(transformer_config=transformer_config)
+
+        if self._llm_config_enabled(llm_config):
+            self.analyze_sentiment_llm(llm_config=llm_config)
 
         if export_results:
             logger.info("Exporting results...")
@@ -416,6 +650,21 @@ class AutoEconSentiment:
             if self.df_transformer_sentence_probabilities is not None:
                 self.df_transformer_sentence_probabilities.reset_index().to_parquet(
                     f"{self.export_path}/sentiment_transformer_sentence_probabilities.parquet.gzip",
+                    compression="gzip",
+                    index=False,
+                )
+            if self.df_sent_llm is not None:
+                self.df_sent_llm.reset_index().to_parquet(
+                    f"{self.export_path}/sentiment_llm.parquet.gzip",
+                    compression="gzip",
+                    index=False,
+                )
+                dataframes_to_concat.append(
+                    self.df_sent_llm.reset_index().set_index("id_text").filter(regex="sentiment|polarity|confidence|share|count")
+                )
+            if self.df_llm_sentence_probabilities is not None:
+                self.df_llm_sentence_probabilities.reset_index().to_parquet(
+                    f"{self.export_path}/sentiment_llm_sentence_probabilities.parquet.gzip",
                     compression="gzip",
                     index=False,
                 )
@@ -475,11 +724,14 @@ if __name__ == "__main__":
         )
         lexical_config = AutoEconSentiment.resolve_lexical_config(config)
         transformer_config = AutoEconSentiment.resolve_transformer_config(config)
+        llm_config = AutoEconSentiment.resolve_llm_config(config)
         analyzer.run(
             clean_config=config.get("cleaning", {}),
             dictionaries=lexical_config.get("dictionaries", {}),
             aggregation_methods=lexical_config.get("aggregation_methods", []),
             export_results=config["output"].get("export_results", True),
             transformer_config=transformer_config or {},
+            llm_config=llm_config or {},
         )
         logger.info("Pipeline run with params.yaml configuration completed.")
+

@@ -134,3 +134,25 @@ transformer:
         neutral: 0
         positive: 1
         negative: -1
+
+# ------------------------------------------------------------------------------
+# LLM SENTIMENT
+# Optional single-shot LLM scoring; requires `uv sync --extra llm`.
+# Set `enabled: true` to activate. Settings here apply to every model in the
+# `models` list below, and any model may override them individually.
+# ------------------------------------------------------------------------------
+llm:
+  enabled: false
+  text_column_llm: text_clean
+  aggregation_methods: [byalltext]
+  provider: ollama
+  output_scale: continuous
+  temperature: 0
+  confidence_cutoff: 0.7
+  models:
+    - name: llama3:8b
+      short_name: llama3
+      provider: ollama
+      temperature: 0
+      output_scale: continuous
+
