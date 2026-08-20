@@ -52,6 +52,9 @@ transformers = [
     "torch>=2.0,<3",
     "transformers>=4.40,<5",
 ]
+llm = [
+    "httpx>=0.27.0,<1",
+]
 
 [project.urls]
 Homepage = "https://github.com/corybaird/auto-econ-sentiment"
@@ -62,6 +65,11 @@ Changelog = "https://github.com/corybaird/auto-econ-sentiment/blob/main/CHANGELO
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+markers = [
+    "llm: marks tests as LLM integration tests (skipped by default)",
+    "transformers: marks tests as transformer integration tests",
+]
+
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/auto_econ_sentiment"]

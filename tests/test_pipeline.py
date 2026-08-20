@@ -252,10 +252,11 @@ def test_sentiment_word_counts_nonzero(lexical):
 # ── Public API ────────────────────────────────────────────────────────────────
 
 def test_public_api_imports():
-    from auto_econ_sentiment import (
+    from auto_econ_sentiment import (  # noqa: F401
         AutoEconSentiment,
         SentimentLexical,
         SentimentTransformers,
+        SentimentLLM,
         TextLoader,
         TextCleaner,
         AutoEconSentimentError,
@@ -263,6 +264,7 @@ def test_public_api_imports():
     )
     assert __version__ is not None
     assert SentimentTransformers is not None
+    assert SentimentLLM is not None
 
 
 def test_version_is_string():

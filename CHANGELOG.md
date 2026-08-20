@@ -21,12 +21,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 - Added fragment merging (`_merge_incomplete_sentences`) to rejoin lowercase- and punctuation-initial fragments into the preceding sentence.
 - Added `sentence_probability_aggregation` parameter (`cutoff` | `mean`) to transformer `bysentence` aggregation, threaded through `sentiment_pipeline` and pipeline config resolution.
 - Added a mean-probability aggregation mode that averages raw sentence probabilities per document instead of thresholding, preserving confidence magnitude and producing a continuous document score.
-- Added tests for `TextLoader` directory loading, segmentation edge cases, paragraph splitting, and mean-mode aggregation arithmetic.
+- Added LLM single-shot sentiment scoring via `SentimentLLM`, with Ollama and OpenAI-compatible providers (OpenAI, OpenRouter, Together, Groq, vLLM) behind a new optional `llm` extra (`httpx` only, no provider SDK).
+- Added `polarity` x `confidence` scoring, deliberately mirroring the transformer's existing `direction * probability` shape so LLM output is comparable in the same harmonized columns. Selectable continuous (`-1..1`) or discrete (`{0,1,2}`) presentation via `output_scale`.
+- Added `analyze_sentiment_llm` pipeline method with `resolve_llm_config`, `_expand_llm_model_configs`, and `_coerce_llm_model_config` helpers mirroring the transformer config pattern.
+- Added `docs/llm_scoring.md` covering installation, configuration, output columns, provider setup, prompting, and caveats.
+- Added a `@pytest.mark.llm` marker for optional LLM integration tests, skipped by default.
+- Added tests for `TextLoader` directory loading, segmentation edge cases, paragraph splitting, mean-mode aggregation arithmetic, and `SentimentLLM` (prompt formatting, JSON parsing, continuous/discrete scoring, prose fallback, batch resilience, out-of-range rejection, confidence cutoff, column naming, request building, and pipeline integration).
 
 ### Changed
 - Changed `TextSegmenter.split_text` to apply newline pre-splitting, abbreviation protection, and fragment merging in a unified pipeline before both the NLTK and regex tokenizers.
 - Expanded `_FALLBACK_BOUNDARY` to include opening quotes and brackets in its lookahead character class.
-- Updated `docs/data.md` with directory-of-txt loading, constructor parameters, and mean-aggregation output columns.
+- Changed `src/auto_econ_sentiment/__init__.py` and `models/__init__.py` to export `SentimentLLM`.
+- Updated `docs/data.md` with directory-of-txt loading, constructor parameters, mean-aggregation output columns, and LLM output columns.
 
 ### Fixed
 - Fixed `TextSegmenter` silently degrading to a substantially weaker regex tokenizer when NLTK or its `punkt` data was unavailable, logging only a warning. Measured over 230 FOMC statements, the fallback produced 4,245 sentences of which 37.9% were non-sentential fragments, against 3,302 sentences and 21.5% for `punkt` -- so the same corpus could differ by 16 percentage points of garbage with no visible error. The two paths now converge (3,631 vs 3,633 sentences, 28.6% both), and `drop_invalid=True` brings the garbage share to 7.2%.
