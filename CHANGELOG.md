@@ -9,6 +9,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 ## [Unreleased]
 
 ### Added
+- Added `sentence_probability_aggregation` parameter (`cutoff` | `mean`) to transformer `bysentence` aggregation, threaded through `sentiment_pipeline` and pipeline config resolution
+- Added mean-probability aggregation mode that averages raw sentence probabilities per document instead of thresholding, preserving confidence magnitude and producing a continuous document score
+- Added tests for mean-mode arithmetic, column naming, cutoff/mean distinguishability, harmonized shares output, and invalid parameter validation
 - Added directory-of-`.txt` corpus loading in `TextLoader`, supporting flat directories as well as categorized subdirectories with `group_column`.
 - Added regex-based filename date parsing (`filename_date_pattern`), retaining unparseable dates as `NaT` with a logged warning.
 - Added `recursive` flag for directory traversal and automatic unique `id_column` generation for text corpora.

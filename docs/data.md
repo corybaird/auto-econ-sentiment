@@ -66,9 +66,16 @@ fomc_label
 fomc_probability_0
 fomc_sentiment_byalltext
 fomc_countsentence_LABEL_0
+fomc_meanprobability_LABEL_0
+fomc_sentiment_bysentence
+fomc_sentiment_bysentence_mean
 fomc_count_positive
 fomc_share_negative
 fomc_net_sentiment
 ```
 
-`bysentence` aggregation first records raw per-sentence probabilities, then counts labels that pass the configured probability cutoff and aggregates those counts back to `id_text`. When `output_schema: shares` is enabled, the model-specific labels are also converted into harmonized positive, neutral, and negative counts and shares.
+`bysentence` aggregation supports two modes via `sentence_probability_aggregation`:
+- `cutoff` (default): first records raw per-sentence probabilities, then counts labels that pass the configured `sentence_probability_cutoff` and aggregates those counts back to `id_text` (producing columns like `{model}_countsentence_{label}` and `{model}_sentiment_bysentence`).
+- `mean`: averages raw per-sentence probabilities across sentences for each document (producing columns like `{model}_meanprobability_{label}` and `{model}_sentiment_bysentence_mean`), preserving confidence magnitude.
+
+When `output_schema: shares` is enabled, the model-specific labels are also converted into harmonized positive, neutral, and negative counts and shares across both modes.
