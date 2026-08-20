@@ -6,6 +6,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ---
 
+## [Unreleased]
+
+### Added
+- Added LLM single-shot sentiment scoring via `SentimentLLM` with Ollama and OpenAI-compatible providers behind the `llm` extra (`httpx` only, no SDK).
+- Added `analyze_sentiment_llm` pipeline method with `resolve_llm_config`, `_expand_llm_model_configs`, and `_coerce_llm_model_config` helpers mirroring the transformer config pattern.
+- Added `docs/llm_scoring.md` covering installation, configuration, output columns, provider setup (Ollama, OpenAI, OpenRouter), prompting, and caveats.
+- Added LLM output columns to `docs/data.md`.
+- Added `@pytest.mark.llm` marker for optional integration tests, skipped by default.
+- Added tests for `SentimentLLM` covering prompt formatting, JSON parsing, continuous/discrete scoring, prose fallback, batch resilience, out-of-range rejection, confidence cutoff filtering, column naming, request building (Ollama and OpenAI), sentence aggregation, config resolution, and pipeline integration.
+
+### Changed
+- Changed `src/auto_econ_sentiment/__init__.py` and `models/__init__.py` to export `SentimentLLM`.
+
 ## [0.3.0] - 2026-08-19
 
 ### Added
