@@ -6,6 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ---
 
+## [Unreleased]
+
+### Added
+- Added `sentence_probability_aggregation` parameter (`cutoff` | `mean`) to transformer `bysentence` aggregation, threaded through `sentiment_pipeline` and pipeline config resolution
+- Added mean-probability aggregation mode that averages raw sentence probabilities per document instead of thresholding, preserving confidence magnitude and producing a continuous document score
+- Added tests for mean-mode arithmetic, column naming, cutoff/mean distinguishability, harmonized shares output, and invalid parameter validation
+
 ## [0.3.0] - 2026-08-19
 
 ### Added
