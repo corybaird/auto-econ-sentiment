@@ -44,6 +44,9 @@ dev = [
     "pytest>=9.0.2",
     "ruff>=0.4.0",
 ]
+research = [
+    "statsmodels>=0.14.0,<1",
+]
 notebooks = [
     "jupyter>=1.1.1",
     "fredapi>=0.5.2",
