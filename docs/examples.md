@@ -30,6 +30,36 @@ analyzer.run(
 )
 ```
 
+## Load A Directory Of Text Files
+
+A directory of `.txt` or Markdown files, one document per file, loads directly. Dates are parsed from filenames such as `2020-03-03_statement.txt`, and subdirectory names can label each document:
+
+```python
+from auto_econ_sentiment import TextLoader
+
+corpus = TextLoader(
+    file_path="data/raw/statements/",
+    group_column="Country",  # data/raw/statements/US/..., data/raw/statements/GB/...
+).get_data()
+```
+
+Pass the same directory as `import_file_path` to `AutoEconSentiment` to run the full pipeline on it.
+
+## Compare Methods On One Scale
+
+Every column ending in `_net` lies in $[-1, 1]$ with zero as neutral, so lexical and transformer scores can be read side by side:
+
+```python
+import pandas as pd
+
+scores = pd.read_parquet("data/sentiment/basic_tests/sentiment_all_results.parquet.gzip")
+net = scores.filter(regex=r"_net$")
+print(net.describe().T[["mean", "std", "min", "max"]])
+print(net.corr().round(2))
+```
+
+`posneg` scores divide the net count by the positive and negative matches only, so documents with few matches often sit at $\pm 1$. `allwords` and `allsentences` divide by the full document and vary more smoothly. See [data.md](data.md#score-scales) for every column.
+
 ## Run The CBS Speeches Demo
 
 ```bash
@@ -126,18 +156,27 @@ df_clean_sentences = segmenter.run(df)
 
 ### Paragraph Segmentation with `ParagraphSegmenter`
 
-`ParagraphSegmenter` splits documents on blank lines (`\n\s*\n+`) and tracks `paragraph_number`.
+`ParagraphSegmenter` splits documents on blank lines (`\n\s*\n+`) and tracks `paragraph_number`. `TextCleaner` collapses newlines when it normalizes whitespace, so run it on the original `text` column: on `text_clean` every document is a single paragraph.
 
 ```python
+import pandas as pd
 from auto_econ_sentiment.clean import ParagraphSegmenter, TextSegmenter
 
+df = pd.DataFrame({
+    "id_text": ["doc1"],
+    "text": [
+        "Inflation remains elevated across the euro area. Price pressures have broadened.\n\n"
+        "The committee decided to hold rates steady this month. It will act as needed."
+    ],
+})
+
 # 1. Split documents into paragraphs
-p_segmenter = ParagraphSegmenter(text_column="text_clean")
+p_segmenter = ParagraphSegmenter(text_column="text")
 df_paragraphs = p_segmenter.run(df)
 
 # 2. Split paragraphs into sentences while preserving paragraph numbers
-s_segmenter = TextSegmenter(text_column="text_clean")
+s_segmenter = TextSegmenter(text_column="text")
 df_sentences = s_segmenter.run(df_paragraphs)
-# df_sentences contains id_text, paragraph_number, sentence_number, text_clean
+# df_sentences contains id_text, paragraph_number, sentence_number, text
 ```
 
