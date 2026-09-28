@@ -63,7 +63,7 @@ This mirrors the probability $\times$ direction calculation used in `SentimentTr
 The `output_scale` parameter controls presentation:
 
 - **`continuous`** (default): The signed product $\text{polarity} \times \text{confidence} \in [-1, 1]$.
-- **`discrete`**: Mapped from polarity alone into $\{0, 1, 2\}$ (0 for negative, 1 for neutral, 2 for positive), matching the `LABEL_0/1/2` conventions in transformer models.
+- **`discrete`**: Mapped from polarity alone into $\{0, 1, 2\}$ (0 for negative, 1 for neutral, 2 for positive). This is a category code, not a net score: neutral is 1, and transformer models each order their `LABEL_0/1/2` classes differently.
 
 ### Output Columns
 
@@ -152,4 +152,4 @@ llm:
 
 - **Batch Resilience**: Unparseable or out-of-range outputs log a warning and record `NaN` for that row without raising or terminating the batch run.
 - **Confidence Cutoff**: The `confidence_cutoff` setting filters out low-certainty predictions, setting document scores below the threshold to `NaN` and excluding unconfident sentences from aggregate counts.
-- **Determinism**: Setting `temperature: 0` ensures reproducible results across runs.
+- **Determinism**: `temperature: 0` makes local models repeatable, but hosted APIs can still return different outputs for the same prompt, and providers update models behind a fixed name. The `{short}_provider`, `{short}_model`, `{short}_prompt_version` and `{short}_temperature` columns record what produced each score; keep them with published results.
