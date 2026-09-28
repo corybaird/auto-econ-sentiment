@@ -6,7 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ---
 
-## [Unreleased]
+## [1.0.0] - 2026-09-28
 
 ### Added
 - Added directory-of-`.txt` corpus loading in `TextLoader`, supporting flat directories as well as categorized subdirectories via `group_column`.
@@ -35,6 +35,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 - Added `sentence_number` and `sentence_text` columns to the sentence-level transformer probability export, so each row can be read against the sentence it scored.
 
 ### Changed
+- Changed the package classifier from `3 - Alpha` to `5 - Production/Stable` for the first stable release.
 - Changed `TextSegmenter.split_text` to apply newline pre-splitting, abbreviation protection, and fragment merging in a unified pipeline before both the NLTK and regex tokenizers.
 - Expanded `_FALLBACK_BOUNDARY` to include opening quotes and brackets in its lookahead character class.
 - Changed `src/auto_econ_sentiment/__init__.py` and `models/__init__.py` to export `SentimentLLM`.
