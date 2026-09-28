@@ -1,0 +1,191 @@
+# ==============================================================================
+# RESEARCH PAPER CONFIGURATION
+# Consumed by src/research_paper. Every figure, table and statistic in
+# reports/overleaf/main.tex is built from the settings below.
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# PATHS
+# Inputs are read from data/raw; everything the pipeline generates goes under
+# data_dir, so deleting that folder forces a clean run.
+# ------------------------------------------------------------------------------
+paths:
+  statement_dir: data/raw/statements          # one folder of .txt files per central bank
+  speech_dir: data/raw/speeches               # one parquet per central bank (CBS speeches)
+  fomc_sample: data/raw/basic_tests/monetary_policy_statement.parquet.gzip
+  dictionaries: src/auto_econ_sentiment/data/lexical_master_dict.yaml
+  data_dir: data/research
+  macro: data/research/fred_macro_monthly.parquet.gzip
+  figure_dir: reports/overleaf/figures
+  table_dir: reports/overleaf/tables
+  statistics: reports/paper_statistics.md
+
+# ------------------------------------------------------------------------------
+# CORPUS
+# ------------------------------------------------------------------------------
+corpus:
+  statement_start: "1994-01-01"               # drops 15 early Reserve Bank of Australia statements
+  countries: null                             # null scores every folder under statement_dir
+  speech_country: US                          # the VAR runs on US speeches
+
+# ------------------------------------------------------------------------------
+# SCORING
+# Passed to the auto-econ-sentiment pipeline for statements and speeches alike.
+# ------------------------------------------------------------------------------
+clean:
+  clean_html: true
+  clean_numbers_percentages: true
+  remove_headers: []
+  tokenize: true
+  stem: true
+
+lexical:
+  dictionaries:
+    unstemmed: [correa, hubert, lm, hiv]
+    stemmed: [bn, ap]
+  aggregation_methods: [posneg, allwords]
+
+# Inference uses the package defaults: 512-token inputs, batches of 16, and CUDA
+# when available. auto-econ-sentiment 1.0.1 reads those settings per model only.
+transformer:
+  min_sentence_chars: 20
+  sentence_probability_cutoff: 0.7
+  output_schema: shares
+  net_sentiment_formula: positive_minus_negative
+  models:
+    - name: Moritz-Pfeifer/CentralBankRoBERTa-sentiment-classifier
+      short_name: cbroberta
+      label: CentralBankRoBERTa
+      num_labels: 2
+      label_map: {positive: 1, negative: -1}
+    - name: ProsusAI/finbert
+      short_name: finbertpro
+      label: FinBERT
+      num_labels: 3
+      label_map: {positive: 1, neutral: 0, negative: -1}
+    # FOMC-RoBERTa classifies stance: LABEL_0 dovish, LABEL_1 hawkish, LABEL_2 neutral.
+    - name: gtfintechlab/FOMC-RoBERTa
+      short_name: fomc
+      label: FOMC-RoBERTa
+      num_labels: 3
+      label_map: {LABEL_0: -1, LABEL_1: 1, LABEL_2: 0}
+
+# ------------------------------------------------------------------------------
+# MEASURES
+# The columns the figures compare, all on the shared [-1, 1] scale. Lexical
+# measures use PosNeg; transformer measures use All-Sentences, with the PosNeg
+# counterparts kept for the statistics that compare the two denominators.
+# ------------------------------------------------------------------------------
+measures:
+  lexical:
+    correa_sentiment_posneg_net: Correa
+    hubert_sentiment_posneg_net: Hubert-Labondance
+    lm_sentiment_posneg_net: Loughran-McDonald
+    hiv_sentiment_posneg_net: General Inquirer
+    bn_sentiment_posneg_stem_net: Bennani-Neuenkirch
+    ap_sentiment_posneg_stem_net: Apel-Blix Grimaldi
+  transformer:
+    cbroberta_sentiment_allsentences_net: CentralBankRoBERTa
+    finbertpro_sentiment_allsentences_net: FinBERT
+    fomc_sentiment_allsentences_net: FOMC-RoBERTa
+  transformer_posneg:
+    cbroberta_sentiment_posneg_net: CentralBankRoBERTa
+    finbertpro_sentiment_posneg_net: FinBERT
+    fomc_sentiment_posneg_net: FOMC-RoBERTa
+
+# ------------------------------------------------------------------------------
+# FIGURES
+# ------------------------------------------------------------------------------
+figure:
+  dpi: 300
+  font: {title: 15, axis_label: 14, tick_label: 13, legend: 11, subplot_title: 14}
+  rolling_window: 4
+  time_series_start: "2006-01-01"
+  family_linestyles: {Lexical: "-", Transformer: "--"}
+  family_colors: {Lexical: "#245c7a", Transformer: "#9b3d2e"}
+  measure_colors:
+    correa_sentiment_posneg_net: "#1f77b4"
+    hubert_sentiment_posneg_net: "#ff7f0e"
+    lm_sentiment_posneg_net: "#2ca02c"
+    hiv_sentiment_posneg_net: "#8c564b"
+    bn_sentiment_posneg_stem_net: "#9467bd"
+    ap_sentiment_posneg_stem_net: "#7f7f7f"
+    cbroberta_sentiment_allsentences_net: "#d62728"
+    finbertpro_sentiment_allsentences_net: "#e377c2"
+    fomc_sentiment_allsentences_net: "#17becf"
+  panel_countries:
+    US: United States (FOMC)
+    GB: United Kingdom (BoE)
+  grid_color: "#e5e5e5"
+  reference_line_color: "#444444"
+  recessions:
+    - {start: "2001-03-01", end: "2001-11-30"}
+    - {start: "2007-12-01", end: "2009-06-30"}
+    - {start: "2020-02-01", end: "2020-04-30"}
+
+# ------------------------------------------------------------------------------
+# VAR CASE STUDY
+# One recursive VAR per sentiment measure, sentiment ordered first.
+# ------------------------------------------------------------------------------
+var:
+  sample_start: "2000-01-01"
+  maxlags: 6
+  irf_periods: 24
+  confidence: 0.90
+  min_observations: 36
+  variables:
+    - sentiment
+    - industrial_production_growth
+    - cpi_inflation
+    - unemployment_rate
+    - short_rate
+    - credit_spread
+  response_labels:
+    industrial_production_growth: Industrial production growth
+    cpi_inflation: CPI inflation
+    unemployment_rate: Unemployment rate
+    short_rate: Short-term rate
+    credit_spread: Credit spread
+  measures:
+    hubert_sentiment_posneg_net: "Lexical: Hubert-Labondance"
+    cbroberta_sentiment_allsentences_net: "Transformer: CentralBankRoBERTa"
+  measure_colors:
+    hubert_sentiment_posneg_net: "#1f77b4"
+    cbroberta_sentiment_allsentences_net: "#d62728"
+
+# FRED series fetched into paths.macro, and how each enters the VAR.
+macro:
+  start: "1990-01-01"
+  series: {production: INDPRO, cpi: CPIAUCSL, unemployment: UNRATE, short_rate: DGS3MO, credit_spread: BAA10Y}
+  log_growth: {production: industrial_production_growth, cpi: cpi_inflation}   # 100 x monthly log change
+  levels: {unemployment: unemployment_rate, short_rate: short_rate, credit_spread: credit_spread}
+
+# ------------------------------------------------------------------------------
+# EXHIBITS
+# ------------------------------------------------------------------------------
+exhibits:
+  cleaning:                                   # Figure 2: header contamination
+    columns: [correa_sentiment_posneg_net, lm_sentiment_posneg_net]
+    start_date: "2007-01-01"
+    clean_label: Clean text
+    header_label: Website header prepended
+    header: >-
+      The Federal Reserve, the central bank of the United States, provides the nation
+      with a safe, flexible, and stable monetary and financial system.
+  dictionary_labels: {correa: Correa, hubert: Hubert, lm: LM, hiv: HIV, bn: BN, ap: AP}
+  method_labels: {posneg: PosNeg, allwords: All-Words}
+  dictionaries:                               # Table 1
+    - {key: lm, name: Loughran--McDonald, domain: Finance, stemming: "No"}
+    - {key: correa, name: Correa et al., domain: Financial stability, stemming: "No"}
+    - {key: hubert, name: Hubert--Labondance, domain: Central banking, stemming: "No"}
+    - {key: hiv, name: General Inquirer / Harvard IV, domain: General sentiment, stemming: "No"}
+    - {key: ap, name: Apel--Blix Grimaldi, domain: Central banking, stemming: "Yes"}
+    - {key: bn, name: Bennani--Neuenkirch, domain: Central banking, stemming: "Yes"}
+  transformers:                               # Table 2
+    - {name: CentralBankRoBERTa, short_name: cbroberta, hf_id: Moritz-Pfeifer/CentralBankRoBERTa-sentiment-classifier, architecture: RoBERTa, domain: Central banking, labels: "Positive, Negative (2)"}
+    - {name: FOMC-RoBERTa, short_name: fomc, hf_id: gtfintechlab/FOMC-RoBERTa, architecture: RoBERTa, domain: FOMC statements, labels: "Hawkish, Neutral, Dovish (3)"}
+    - {name: FinBERT (ProsusAI), short_name: finbertpro, hf_id: ProsusAI/finbert, architecture: BERT, domain: Financial news, labels: "Pos, Neu, Neg (3)"}
+    - {name: FinBERT-Tone, short_name: finbertyi, hf_id: yiyanghkust/finbert-tone, architecture: BERT, domain: Financial disclosures, labels: "Pos, Neu, Neg (3)"}
+  sentence_audit:                             # Table 3
+    country: US
+    date: "2020-03-03"
