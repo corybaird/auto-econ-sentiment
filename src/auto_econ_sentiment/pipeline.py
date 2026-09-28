@@ -15,6 +15,10 @@ from auto_econ_sentiment.exceptions import DataLoadError, SentimentAnalysisError
 
 logger = logging.getLogger(__name__)
 
+# TextLoader renames the configured text column to this name, so every stage after
+# loading reads it here rather than under the name given to AutoEconSentiment.
+LOADED_TEXT_COLUMN = "text"
+
 
 class AutoEconSentiment:
     """End-to-end pipeline that loads a text corpus, cleans it, and scores it
@@ -387,7 +391,7 @@ class AutoEconSentiment:
         logger.info("Cleaning data...")
         cleaner = TextCleaner(
             df=self.df_raw,
-            text_column=self.text_column,
+            text_column=LOADED_TEXT_COLUMN,
             export_path=self.export_path,
             clean_config=clean_config,
         )
@@ -402,7 +406,7 @@ class AutoEconSentiment:
         """Score the cleaned text against each dictionary × aggregation method
         combination and return the concatenated results."""
         logger.info("Analyzing sentiment using lexical methods...")
-        pipe_lexical = SentimentLexical(df_input=self.df_clean.dropna(subset=[self.text_column]))
+        pipe_lexical = SentimentLexical(df_input=self.df_clean.dropna(subset=[LOADED_TEXT_COLUMN]))
         df_sent_lexical = []
 
         unstemmed_dicts = dictionaries.get("unstemmed", []) if isinstance(dictionaries, dict) else dictionaries
