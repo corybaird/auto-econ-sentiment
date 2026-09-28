@@ -72,6 +72,8 @@ Every column ending in `_net` is on $[-1, 1]$ with zero as neutral, so lexical a
 | `{dictionary}_sentiment_{method}_net` | $[-1, 1]$ | 0 | The same score recentered on zero. |
 | `{model}_sentiment_bysentence` | $[-1, 1]$ | 0 | Net count over sentences that clear the probability cutoff. |
 | `{model}_sentiment_byalltext` | $[-1, 1]$ | 0 | Label direction times the predicted class probability. |
+| `{model}_sentiment_posneg_net` | $[-1, 1]$ | 0 | Net count over sentences that clear the cutoff in either direction; null when none do. Cutoff mode with `output_schema: shares`. |
+| `{model}_sentiment_allsentences_net` | $[-1, 1]$ | 0 | Net count over every segmented sentence. Cutoff mode with `output_schema: shares`. |
 | `{model}_net_sentiment` | $[-1, 1]$ | 0 | Positive share minus negative share; needs `output_schema: shares`. |
 
 For example, a document with three positive and one negative Hubert-Labondance match has `hubert_sentiment_posneg = 1.5` and `hubert_sentiment_posneg_net = 0.5`.
@@ -91,6 +93,9 @@ fomc_sentiment_bysentence_mean
 fomc_count_positive
 fomc_share_negative
 fomc_net_sentiment
+fomc_count_sentences
+fomc_sentiment_posneg_net
+fomc_sentiment_allsentences_net
 ```
 
 `bysentence` aggregation supports two modes via `sentence_probability_aggregation`:

@@ -467,6 +467,9 @@ class AutoEconSentiment:
         )
         df_sent_transformer = []
         df_sentence_probabilities = []
+        # Sentence number and text for the sentence-level output, taken once from the
+        # first sentence-aggregated model so each row can be read against its text.
+        sentence_keys: Optional[pd.DataFrame] = None
 
         for model_config in model_configs:
             model_short = model_config["model_name_short"]
@@ -513,6 +516,10 @@ class AutoEconSentiment:
                 df_agg, df_prob = result
                 df_sent_transformer.append(df_agg)
                 df_sentence_probabilities.append(df_prob)
+                if sentence_keys is None:
+                    sentence_keys = df_model_input[[segmenter.sentence_number_column, text_column]].rename(
+                        columns={text_column: "sentence_text"}
+                    )
             else:
                 df_model = (
                     result
@@ -525,7 +532,11 @@ class AutoEconSentiment:
 
         self.df_sent_transformer = pd.concat(df_sent_transformer, axis=1)
         if df_sentence_probabilities:
-            self.df_transformer_sentence_probabilities = pd.concat(df_sentence_probabilities, axis=1)
+            probabilities = pd.concat(df_sentence_probabilities, axis=1)
+            if sentence_keys is not None and len(sentence_keys) == len(probabilities):
+                probabilities.insert(0, "sentence_number", sentence_keys.iloc[:, 0].to_numpy())
+                probabilities.insert(1, "sentence_text", sentence_keys["sentence_text"].to_numpy())
+            self.df_transformer_sentence_probabilities = probabilities
         logger.info("Transformer sentiment analysis complete.")
         return self.df_sent_transformer
 

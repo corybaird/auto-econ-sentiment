@@ -189,13 +189,33 @@ class SentimentTransformers(SentimentBase):
         negative_share = df_score[f"{self.model_name_short}_share_negative"]
         net_sentiment_formula = getattr(self, "net_sentiment_formula", "positive_minus_negative")
         if net_sentiment_formula == "negative_minus_positive":
-            df_score[f"{self.model_name_short}_net_sentiment"] = negative_share - positive_share
+            sign = -1
         elif net_sentiment_formula == "positive_minus_negative":
-            df_score[f"{self.model_name_short}_net_sentiment"] = positive_share - negative_share
+            sign = 1
         else:
             raise ValueError(
                 "net_sentiment_formula must be either 'positive_minus_negative' "
                 "or 'negative_minus_positive'."
+            )
+        df_score[f"{self.model_name_short}_net_sentiment"] = sign * (positive_share - negative_share)
+
+        # Two further denominators for the same net count, mirroring the lexical pair.
+        # They need whole-sentence counts, so they exist only in cutoff mode, where
+        # sentiment_bysentence records the segmented sentence count.
+        sentence_count = df_score.get(f"{self.model_name_short}_count_sentences")
+        if sentence_count is not None:
+            positive_count = df_score[f"{self.model_name_short}_count_positive"]
+            negative_count = df_score[f"{self.model_name_short}_count_negative"]
+            net_count = sign * (positive_count - negative_count)
+            # PosNeg divides by the sentences that carry sentiment, so it is undefined when
+            # a document has none and is left null rather than filled with a spurious zero.
+            df_score[f"{self.model_name_short}_sentiment_posneg_net"] = (
+                net_count / (positive_count + negative_count).replace(0, np.nan)
+            )
+            # AllSentences divides by every segmented sentence, the counterpart of the
+            # AllWords token denominator, and is defined for any non-empty document.
+            df_score[f"{self.model_name_short}_sentiment_allsentences_net"] = (
+                net_count / sentence_count.replace(0, np.nan)
             )
         return df_score
 
@@ -310,6 +330,9 @@ class SentimentTransformers(SentimentBase):
             df_score = df_prob.groupby("id_text").mean()
         else:
             df_score = df_prob.ge(sentence_probability_cutoff).astype(int).groupby("id_text").sum()
+            # Every segmented sentence, whether or not any class cleared the cutoff. This is
+            # the sentence-level counterpart of the AllWords token denominator.
+            df_score[f"{self.model_name_short}_count_sentences"] = df_prob.groupby("id_text").size()
         rename_map = {
             f"{self.model_name_short}_probability_{label_id}": f"{self.model_name_short}_{label}"
             for label_id, label in id2label.items()
