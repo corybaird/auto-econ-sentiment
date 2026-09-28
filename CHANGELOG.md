@@ -9,6 +9,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 ## [1.0.0] - 2026-09-28
 
 ### Added
+- Added `CITATION.cff`, which GitHub uses for its Cite this repository button, and a contributing guide in `.github/CONTRIBUTING.md`.
 - Added directory-of-`.txt` corpus loading in `TextLoader`, supporting flat directories as well as categorized subdirectories via `group_column`.
 - Added regex-based filename date parsing (`filename_date_pattern`) to `TextLoader`, retaining unparseable dates as `NaT` with a logged warning instead of silently dropping rows.
 - Added Markdown (`.md`, `.markdown`) files to `TextLoader` directory input, read as plain text alongside `.txt` files.
