@@ -189,13 +189,33 @@ class SentimentTransformers(SentimentBase):
         negative_share = df_score[f"{self.model_name_short}_share_negative"]
         net_sentiment_formula = getattr(self, "net_sentiment_formula", "positive_minus_negative")
         if net_sentiment_formula == "negative_minus_positive":
-            df_score[f"{self.model_name_short}_net_sentiment"] = negative_share - positive_share
+            sign = -1
         elif net_sentiment_formula == "positive_minus_negative":
-            df_score[f"{self.model_name_short}_net_sentiment"] = positive_share - negative_share
+            sign = 1
         else:
             raise ValueError(
                 "net_sentiment_formula must be either 'positive_minus_negative' "
                 "or 'negative_minus_positive'."
+            )
+        df_score[f"{self.model_name_short}_net_sentiment"] = sign * (positive_share - negative_share)
+
+        # Two further denominators for the same net count, mirroring the lexical pair.
+        # They need whole-sentence counts, so they exist only in cutoff mode, where
+        # sentiment_bysentence records the segmented sentence count.
+        sentence_count = df_score.get(f"{self.model_name_short}_count_sentences")
+        if sentence_count is not None:
+            positive_count = df_score[f"{self.model_name_short}_count_positive"]
+            negative_count = df_score[f"{self.model_name_short}_count_negative"]
+            net_count = sign * (positive_count - negative_count)
+            # PosNeg divides by the sentences that carry sentiment, so it is undefined when
+            # a document has none and is left null rather than filled with a spurious zero.
+            df_score[f"{self.model_name_short}_sentiment_posneg_net"] = (
+                net_count / (positive_count + negative_count).replace(0, np.nan)
+            )
+            # AllSentences divides by every segmented sentence, the counterpart of the
+            # AllWords token denominator, and is defined for any non-empty document.
+            df_score[f"{self.model_name_short}_sentiment_allsentences_net"] = (
+                net_count / sentence_count.replace(0, np.nan)
             )
         return df_score
 
@@ -280,7 +300,11 @@ class SentimentTransformers(SentimentBase):
         self.df_labels = pd.concat([self.input_df.reset_index(drop=True), predictions], axis=1)
         return self.df_labels
 
-    def sentiment_bysentence(self, sentence_probability_cutoff: float = 0.7) -> tuple[pd.DataFrame, pd.DataFrame]:
+    def sentiment_bysentence(
+        self,
+        sentence_probability_cutoff: float = 0.7,
+        sentence_probability_aggregation: str = "cutoff",
+    ) -> tuple[pd.DataFrame, pd.DataFrame]:
         """Aggregate sentence-row classifications back to ``id_text``."""
         if self.df_labels is None:
             self.analyze_sentiment()
@@ -289,10 +313,26 @@ class SentimentTransformers(SentimentBase):
         if "id_text" not in self.df_labels.columns:
             raise ValueError("Sentence-level aggregation requires an 'id_text' column.")
 
+        agg_mode = sentence_probability_aggregation.lower()
+        if agg_mode not in ("cutoff", "mean"):
+            raise ValueError("sentence_probability_aggregation must be either 'cutoff' or 'mean'.")
+
+        if agg_mode == "mean" and sentence_probability_cutoff != 0.7:
+            logger.debug(
+                "sentence_probability_cutoff (%s) is ignored when sentence_probability_aggregation='mean'",
+                sentence_probability_cutoff,
+            )
+
         id2label = self._id2label()
         probability_cols = [col for col in self.df_labels.columns if col.startswith(f"{self.model_name_short}_probability_")]
         df_prob = self.df_labels.set_index("id_text")[probability_cols]
-        df_score = df_prob.ge(sentence_probability_cutoff).astype(int).groupby("id_text").sum()
+        if agg_mode == "mean":
+            df_score = df_prob.groupby("id_text").mean()
+        else:
+            df_score = df_prob.ge(sentence_probability_cutoff).astype(int).groupby("id_text").sum()
+            # Every segmented sentence, whether or not any class cleared the cutoff. This is
+            # the sentence-level counterpart of the AllWords token denominator.
+            df_score[f"{self.model_name_short}_count_sentences"] = df_prob.groupby("id_text").size()
         rename_map = {
             f"{self.model_name_short}_probability_{label_id}": f"{self.model_name_short}_{label}"
             for label_id, label in id2label.items()
@@ -312,13 +352,23 @@ class SentimentTransformers(SentimentBase):
         count_cols = [f"{self.model_name_short}_{label}" for label in id2label.values() if f"{self.model_name_short}_{label}" in df_score.columns]
         denominator = df_score[count_cols].sum(axis=1).replace(0, np.nan)
         numerator = df_score[weighted_columns].sum(axis=1) if weighted_columns else 0
-        df_score[f"{self.model_name_short}_sentiment_bysentence"] = (numerator / denominator).fillna(0)
+        score_column = (
+            f"{self.model_name_short}_sentiment_bysentence_mean"
+            if agg_mode == "mean"
+            else f"{self.model_name_short}_sentiment_bysentence"
+        )
+        df_score[score_column] = (numerator / denominator).fillna(0)
         if getattr(self, "output_schema", None) == "shares":
             df_score = self._add_harmonized_sentence_outputs(df_score, id2label)
         df_score = df_score.drop(columns=weighted_columns, errors="ignore")
+        label_prefix = (
+            f"{self.model_name_short}_meanprobability_"
+            if agg_mode == "mean"
+            else f"{self.model_name_short}_countsentence_"
+        )
         df_score = df_score.rename(
             columns={
-                f"{self.model_name_short}_{label}": f"{self.model_name_short}_countsentence_{label}"
+                f"{self.model_name_short}_{label}": f"{label_prefix}{label}"
                 for label in id2label.values()
             }
         )
@@ -328,6 +378,7 @@ class SentimentTransformers(SentimentBase):
         self,
         aggregation: str = "byalltext",
         sentence_probability_cutoff: float = 0.7,
+        sentence_probability_aggregation: str = "cutoff",
     ) -> pd.DataFrame | tuple[pd.DataFrame, pd.DataFrame]:
         """Run transformer sentiment and return document or sentence aggregates."""
         aggregation = aggregation.lower()
@@ -338,7 +389,8 @@ class SentimentTransformers(SentimentBase):
             return self.df_sentiment_output
         if aggregation == "bysentence":
             df_agg, df_sentence_probabilities = self.sentiment_bysentence(
-                sentence_probability_cutoff=sentence_probability_cutoff
+                sentence_probability_cutoff=sentence_probability_cutoff,
+                sentence_probability_aggregation=sentence_probability_aggregation,
             )
             self.df_sentiment_output = df_agg
             self.df_sentence_probabilities = df_sentence_probabilities

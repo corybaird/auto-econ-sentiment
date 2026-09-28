@@ -113,3 +113,102 @@ def test_split_text_returns_empty_for_non_string_input():
     assert segmenter.split_text(None) == []
     assert segmenter.split_text(float("nan")) == []
     assert segmenter.split_text("   ") == []
+
+
+def test_segmenter_tokenizer_name_property(monkeypatch):
+    monkeypatch.setattr(TextSegmenter, "_load_tokenizer", staticmethod(lambda *args, **kwargs: None))
+    segmenter_fallback = TextSegmenter(text_column="text_clean")
+    assert segmenter_fallback.tokenizer_name == "regex_fallback"
+
+    monkeypatch.setattr(TextSegmenter, "_load_tokenizer", staticmethod(lambda *args, **kwargs: lambda text: [text]))
+    segmenter_nltk = TextSegmenter(text_column="text_clean")
+    assert segmenter_nltk.tokenizer_name == "nltk_punkt"
+
+
+def test_segmenter_require_nltk_raises_when_unavailable(monkeypatch):
+    def mock_load(require_nltk=False):
+        if require_nltk:
+            raise ImportError("No module named 'nltk'")
+        return None
+
+    monkeypatch.setattr(TextSegmenter, "_load_tokenizer", staticmethod(mock_load))
+
+    with pytest.raises(ImportError, match="nltk"):
+        TextSegmenter(text_column="text_clean", require_nltk=True)
+
+
+def test_regression_abbreviation_protection_st_louis(monkeypatch):
+    for force_fallback in [True, False]:
+        if force_fallback:
+            monkeypatch.setattr(TextSegmenter, "_load_tokenizer", staticmethod(lambda *args, **kwargs: None))
+        text = "The Federal Reserve Banks of Chicago, St. Louis, and Kansas City approved the action."
+        segmenter = TextSegmenter(text_column="text_clean")
+        sentences = segmenter.split_text(text)
+        assert len(sentences) == 1
+        assert sentences[0] == "The Federal Reserve Banks of Chicago, St. Louis, and Kansas City approved the action."
+
+
+def test_regression_middle_initial_protection_susan_s_bies(monkeypatch):
+    for force_fallback in [True, False]:
+        if force_fallback:
+            monkeypatch.setattr(TextSegmenter, "_load_tokenizer", staticmethod(lambda *args, **kwargs: None))
+        text = "Voting for the action were Susan S. Bies, Timothy F. Geithner, and Ben S. Bernanke."
+        segmenter = TextSegmenter(text_column="text_clean")
+        sentences = segmenter.split_text(text)
+        assert len(sentences) == 1
+        assert sentences[0] == "Voting for the action were Susan S. Bies, Timothy F. Geithner, and Ben S. Bernanke."
+
+
+def test_regression_newline_header_boundary(monkeypatch):
+    for force_fallback in [True, False]:
+        if force_fallback:
+            monkeypatch.setattr(TextSegmenter, "_load_tokenizer", staticmethod(lambda *args, **kwargs: None))
+        text = (
+            "For immediate release\n"
+            "Chairman Alan Greenspan announced today that the Committee decided to hold rates."
+        )
+        segmenter = TextSegmenter(text_column="text_clean")
+        sentences = segmenter.split_text(text)
+        assert len(sentences) == 2
+        assert sentences[0] == "For immediate release"
+        assert (
+            sentences[1]
+            == "Chairman Alan Greenspan announced today that the Committee decided to hold rates."
+        )
+
+
+def test_segmenter_drop_invalid_filters_garbage_and_rosters():
+    text = (
+        "For immediate release\n"
+        "Inflation remains elevated across the euro area. "
+        "The committee decided to hold rates steady this month.\n"
+        "Voting for the FOMC monetary policy action were: Alan Greenspan, Chairman; Timothy F. Geithner, Vice Chairman; Ben S. Bernanke.\n"
+        "|\nPress releases\n|\nContact Us"
+    )
+    df_input = pd.DataFrame({"id_text": ["doc1"], "text_clean": [text]})
+
+    res_keep = TextSegmenter(text_column="text_clean", drop_invalid=False).run(df_input)
+    assert len(res_keep) >= 3
+
+    res_clean = TextSegmenter(text_column="text_clean", drop_invalid=True).run(df_input)
+    assert res_clean["text_clean"].tolist() == [
+        "Inflation remains elevated across the euro area.",
+        "The committee decided to hold rates steady this month.",
+    ]
+
+
+def test_segmenter_merges_incomplete_sentence_fragments(monkeypatch):
+    monkeypatch.setattr(TextSegmenter, "_load_tokenizer", staticmethod(lambda *args, **kwargs: None))
+    text = (
+        "The Committee decided to maintain the target range for the federal funds rate.\n"
+        "and will continue to monitor the implications of incoming information.\n"
+        "; with one member dissenting."
+    )
+    segmenter = TextSegmenter(text_column="text_clean")
+    sentences = segmenter.split_text(text)
+    assert len(sentences) == 1
+    assert (
+        sentences[0]
+        == "The Committee decided to maintain the target range for the federal funds rate. and will continue to monitor the implications of incoming information. ; with one member dissenting."
+    )
+

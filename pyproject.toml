@@ -1,14 +1,14 @@
 [project]
 name = "auto-econ-sentiment"
-version = "0.3.0"
-description = "Lexical sentiment analysis pipeline for central bank and economic text data."
+version = "1.0.0"
+description = "Reproducible sentiment pipeline for central bank and economic text, with lexical dictionaries and optional transformer and LLM scoring."
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
 authors = [{ name = "Cory Baird", email = "open.empirical.macro@gmail.com" }]
 keywords = ["sentiment", "nlp", "economics", "central-bank", "finance"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -55,6 +55,9 @@ transformers = [
     "torch>=2.0,<3",
     "transformers>=4.40,<5",
 ]
+llm = [
+    "httpx>=0.27.0,<1",
+]
 
 [project.urls]
 Homepage = "https://github.com/corybaird/auto-econ-sentiment"
@@ -65,6 +68,11 @@ Changelog = "https://github.com/corybaird/auto-econ-sentiment/blob/main/CHANGELO
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+markers = [
+    "llm: marks tests as LLM integration tests (skipped by default)",
+    "transformers: marks tests as transformer integration tests",
+]
+
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/auto_econ_sentiment"]

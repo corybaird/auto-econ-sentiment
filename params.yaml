@@ -61,18 +61,22 @@ transformer:
   output_schema: shares
   net_sentiment_formula: positive_minus_negative
   # Sentence-aggregation settings (used when aggregation_methods includes bysentence).
-  # Both can be overridden per model in the models list below.
+  # All can be overridden per model in the models list below.
   min_sentence_chars: 20
   sentence_probability_cutoff: 0.7
+  sentence_probability_aggregation: cutoff
   models:
     - name: gtfintechlab/FOMC-RoBERTa
       short_name: fomc
       num_labels: 3
       max_length: 512
       batch_size: 8
+      # FOMC-RoBERTa predicts monetary-policy stance, not tone: LABEL_0 is dovish,
+      # LABEL_1 hawkish, LABEL_2 neutral. Hawkish maps to +1, matching the research
+      # paper configuration.
       label_mapping:
-        LABEL_0: positive
-        LABEL_1: negative
+        LABEL_0: negative
+        LABEL_1: positive
         LABEL_2: neutral
       sentiment_values:
         positive: 1
@@ -84,14 +88,16 @@ transformer:
       num_labels: 4
       max_length: 512
       batch_size: 8
+      # Stance classes per the model card: LABEL_0 neutral, LABEL_1 hawkish,
+      # LABEL_2 dovish, LABEL_3 irrelevant. Hawkish maps to +1, as for FOMC-RoBERTa.
       label_mapping:
-        LABEL_0: negative
+        LABEL_0: neutral
         LABEL_1: positive
-        LABEL_2: neutral
+        LABEL_2: negative
         LABEL_3: irrelevant
       sentiment_values:
-        negative: 1
-        positive: -1
+        positive: 1
+        negative: -1
         neutral: 0
         irrelevant: 0
 
@@ -134,3 +140,25 @@ transformer:
         neutral: 0
         positive: 1
         negative: -1
+
+# ------------------------------------------------------------------------------
+# LLM SENTIMENT
+# Optional single-shot LLM scoring; requires `uv sync --extra llm`.
+# Set `enabled: true` to activate. Settings here apply to every model in the
+# `models` list below, and any model may override them individually.
+# ------------------------------------------------------------------------------
+llm:
+  enabled: false
+  text_column_llm: text_clean
+  aggregation_methods: [byalltext]
+  provider: ollama
+  output_scale: continuous
+  temperature: 0
+  confidence_cutoff: 0.7
+  models:
+    - name: llama3:8b
+      short_name: llama3
+      provider: ollama
+      temperature: 0
+      output_scale: continuous
+
