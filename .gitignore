@@ -1,16 +1,30 @@
+# Data and corpus directories
 data/processed/
 data/raw/speeches/
-reports/
-
-.idea/
-.DS_Store
-archive/
+data/raw/statements/
+data/raw/statements
 data/sentiment/
 data/autoecon/
 data/temp/
-references/configs/
+archive/
 src/auto_econ_sentiment/data/*.csv
+
+# Local reports, configuration, and temporary scratch files
+reports/
+references/configs/
+src/temp/
+docs/herdr/
+
+# Container and graph cache
+Dockerfile
+graphify-out/
+
+# IDE and OS metadata
+.idea/
+.claude/
+.DS_Store
 *.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

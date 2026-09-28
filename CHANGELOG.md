@@ -6,9 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ---
 
-## [Unreleased]
+## [1.0.0] - 2026-09-28
 
 ### Added
+- Added `CITATION.cff`, which GitHub uses for its Cite this repository button, and a contributing guide in `.github/CONTRIBUTING.md`.
 - Added directory-of-`.txt` corpus loading in `TextLoader`, supporting flat directories as well as categorized subdirectories via `group_column`.
 - Added regex-based filename date parsing (`filename_date_pattern`) to `TextLoader`, retaining unparseable dates as `NaT` with a logged warning instead of silently dropping rows.
 - Added Markdown (`.md`, `.markdown`) files to `TextLoader` directory input, read as plain text alongside `.txt` files.
@@ -36,6 +37,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ### Changed
 - Changed the default LLM prompt so polarity follows the package sign convention: positive or hawkish text is +1 and negative or dovish text is -1, matching the FOMC-RoBERTa and WCB stance mappings. The default `prompt_version` is now `v2`; the earlier `v1` prompt scored hawkish as -1.
+- Changed the package classifier from `3 - Alpha` to `5 - Production/Stable` for the first stable release.
+- Renamed `docs/ROADMAP.md` to `docs/roadmap.md` and reviewed every docs page for v1.0.0. The README example for FOMC-RoBERTa now uses the corrected label mapping, the architecture page covers the LLM scorer and paragraph segmenter, and the paragraph example runs on the original text, since the cleaner collapses newlines.
 - Changed `TextSegmenter.split_text` to apply newline pre-splitting, abbreviation protection, and fragment merging in a unified pipeline before both the NLTK and regex tokenizers.
 - Expanded `_FALLBACK_BOUNDARY` to include opening quotes and brackets in its lookahead character class.
 - Changed `src/auto_econ_sentiment/__init__.py` and `models/__init__.py` to export `SentimentLLM`.
