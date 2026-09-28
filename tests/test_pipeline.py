@@ -235,6 +235,29 @@ def test_sentiment_allwords_uses_text_column_override(tmp_path):
 
     assert result["toy_counttoken_total_allwords"].iloc[0] == 1
     assert result["toy_sentiment_allwords"].iloc[0] == 2
+    assert result["toy_sentiment_allwords_net"].iloc[0] == 1
+
+
+@pytest.mark.parametrize("text, expected_net", [
+    ("growth growth growth contraction", 0.5),
+    ("contraction", -1.0),
+    ("no dictionary words here", 0.0),
+])
+def test_sentiment_posneg_net_recenters_on_zero(tmp_path, text, expected_net):
+    dictionary_path = tmp_path / "dict.yaml"
+    dictionary_path.write_text(
+        "toy:\n"
+        "  positive:\n"
+        "    - growth\n"
+        "  negative:\n"
+        "    - contraction\n"
+    )
+    analyzer = SentimentLexical(df_input=pd.DataFrame({"text": [text]}), dictionary_path=str(dictionary_path))
+
+    result = analyzer.sentiment_pipeline(dictionary_name="toy", method="posneg")
+
+    assert result["toy_sentiment_posneg_net"].iloc[0] == pytest.approx(expected_net)
+    assert result["toy_sentiment_posneg"].iloc[0] == pytest.approx(expected_net + 1)
 
 
 def test_sentiment_unknown_dictionary(lexical):
