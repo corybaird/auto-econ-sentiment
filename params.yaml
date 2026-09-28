@@ -88,14 +88,16 @@ transformer:
       num_labels: 4
       max_length: 512
       batch_size: 8
+      # Stance classes per the model card: LABEL_0 neutral, LABEL_1 hawkish,
+      # LABEL_2 dovish, LABEL_3 irrelevant. Hawkish maps to +1, as for FOMC-RoBERTa.
       label_mapping:
-        LABEL_0: negative
+        LABEL_0: neutral
         LABEL_1: positive
-        LABEL_2: neutral
+        LABEL_2: negative
         LABEL_3: irrelevant
       sentiment_values:
-        negative: 1
-        positive: -1
+        positive: 1
+        negative: -1
         neutral: 0
         irrelevant: 0
 
