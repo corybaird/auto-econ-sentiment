@@ -1,4 +1,5 @@
 import logging
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -314,3 +315,37 @@ def test_mean_aggregation_omits_sentence_count_denominators():
 
     assert "fake_sentiment_posneg_net" not in df_score.columns
     assert "fake_sentiment_allsentences_net" not in df_score.columns
+
+
+def test_sentence_output_carries_sentence_number_and_text(monkeypatch):
+    import auto_econ_sentiment.models.sentiment_transformers as transformers_module
+
+    class _StubTransformer:
+        def __init__(self, df_input, text_column, model_name_short, **kwargs):
+            self.df_input = df_input
+            self.short = model_name_short
+
+        def sentiment_pipeline(self, aggregation, sentence_probability_cutoff, **kwargs):
+            probabilities = pd.DataFrame(
+                {f"{self.short}_positive": np.linspace(0.1, 0.9, len(self.df_input))},
+                index=pd.Index(self.df_input["id_text"], name="id_text"),
+            )
+            return probabilities.groupby("id_text").mean(), probabilities
+
+    monkeypatch.setattr(transformers_module, "SentimentTransformers", _StubTransformer)
+    analyzer = AutoEconSentiment.__new__(AutoEconSentiment)
+    analyzer.df_clean = pd.DataFrame(
+        {"id_text": [1, 2], "text_clean": ["Inflation remains elevated. Growth has slowed this quarter.", "The Committee decided to hold rates steady."]}
+    )
+    analyzer.df_transformer_sentence_probabilities = None
+
+    analyzer.analyze_sentiment_transformer(_base_transformer_config())
+
+    output = analyzer.df_transformer_sentence_probabilities
+    assert list(output.columns[:2]) == ["sentence_number", "sentence_text"]
+    assert output["sentence_number"].tolist() == [1, 2, 1]
+    assert output["sentence_text"].tolist() == [
+        "Inflation remains elevated.",
+        "Growth has slowed this quarter.",
+        "The Committee decided to hold rates steady.",
+    ]
