@@ -125,6 +125,8 @@ Then open `notebooks/demo_cb_speechs.ipynb` to explore the outputs.
 
 ## Citations
 
+To cite `auto-econ-sentiment` itself, use the **Cite this repository** button on GitHub, which reads [CITATION.cff](CITATION.cff). Contributions are welcome; see [CONTRIBUTING](.github/CONTRIBUTING.md).
+
 Dataset:
 
 - Campiglio, E., Deyris, J., Romelli, D., & Scalisi, G. (2025). Warning words in a warming world: Central bank communication and climate change. *European Economic Review*, 105101.

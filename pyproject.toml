@@ -1,7 +1,7 @@
 [project]
 name = "auto-econ-sentiment"
 version = "1.0.0"
-description = "Lexical sentiment analysis pipeline for central bank and economic text data."
+description = "Reproducible sentiment pipeline for central bank and economic text, with lexical dictionaries and optional transformer and LLM scoring."
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
