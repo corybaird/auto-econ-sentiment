@@ -27,6 +27,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 - Added `docs/llm_scoring.md` covering installation, configuration, output columns, provider setup, prompting, and caveats.
 - Added a `@pytest.mark.llm` marker for optional LLM integration tests, skipped by default.
 - Added tests for `TextLoader` directory loading, segmentation edge cases, paragraph splitting, mean-mode aggregation arithmetic, and `SentimentLLM` (prompt formatting, JSON parsing, continuous/discrete scoring, prose fallback, batch resilience, out-of-range rejection, confidence cutoff, column naming, request building, and pipeline integration).
+- Added a `{dictionary}_sentiment_{method}_net` column to lexical output that recenters each score on $[-1, 1]$, the scale transformer scores use. The existing `{dictionary}_sentiment_{method}` column keeps the $[0, 2]$ Apel-Blix Grimaldi convention.
+  Stemmed dictionaries name it `{dictionary}_sentiment_{method}_stem_net`, so `_net` is always the last suffix.
+- Added a score-scale reference table to `docs/data.md`.
 
 ### Changed
 - Changed `TextSegmenter.split_text` to apply newline pre-splitting, abbreviation protection, and fragment merging in a unified pipeline before both the NLTK and regex tokenizers.
