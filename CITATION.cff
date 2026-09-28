@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use auto-econ-sentiment in your research, please cite it as below."
+type: software
+title: "auto-econ-sentiment: Reproducible Infrastructure for Sentiment Analysis"
+abstract: >-
+  A reproducible pipeline for measuring economic sentiment in central bank and
+  financial text. It loads and cleans text, scores it with six economic
+  dictionaries and optional transformer and LLM classifiers, and exports every
+  measure on a shared scale for side-by-side comparison.
+authors:
+  - family-names: Baird
+    given-names: Cory
+version: 1.0.0
+date-released: "2026-09-28"
+license: MIT
+repository-code: "https://github.com/corybaird/auto-econ-sentiment"
+url: "https://github.com/corybaird/auto-econ-sentiment"
+keywords:
+  - sentiment analysis
+  - central bank communication
+  - economics
+  - natural language processing
+  - reproducible research
