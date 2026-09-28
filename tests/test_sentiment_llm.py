@@ -33,6 +33,15 @@ def test_prompt_formatting_includes_input_text():
     assert "confidence" in formatted
 
 
+def test_default_prompt_scores_hawkish_as_positive():
+    scorer = _mock_llm_scorer()
+    formatted = scorer.format_prompt("The Committee raised the policy rate.")
+
+    assert "-1 for negative/dovish" in formatted
+    assert "1 for positive/hawkish" in formatted
+    assert scorer.prompt_version == "v2"
+
+
 def test_custom_prompt_formatting():
     custom_template = "Score sentiment for: {text}\nFormat: JSON."
     scorer = _mock_llm_scorer(prompt_template=custom_template)
