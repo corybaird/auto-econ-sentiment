@@ -89,7 +89,7 @@ Transformer runs export `sentiment_transformer.parquet.gzip` and, for sentence-l
 - [Architecture](docs/architecture.md)
 - [Data and Outputs](docs/data.md)
 - [Examples](docs/examples.md)
-- [Roadmap](docs/ROADMAP.md)
+- [Roadmap](docs/roadmap.md)
 - [Transformer notebook](notebooks/autoecon_transformers.ipynb)
 
 ## CBS Speeches Demo
