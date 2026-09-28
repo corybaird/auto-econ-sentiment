@@ -11,11 +11,11 @@ Raw datasets and generated outputs are intentionally kept out of version control
 | `data/raw/speeches/CBNAME.parquet.gzip` | Per-central-bank files generated from the CBS speeches dataset. |
 | `data/raw/statements/` | Directory of per-document `.txt` files (flat or organized by subdirectory). |
 
-Input files can be single tabular files (`.csv`, `.xlsx`/`.xls`, `.parquet`/`.parquet.gzip`) containing configured text and date columns, or a directory of raw `.txt` files.
+Input files can be single tabular files (`.csv`, `.xlsx`/`.xls`, `.parquet`/`.parquet.gzip`) containing configured text and date columns, or a directory of raw `.txt` and Markdown (`.md`, `.markdown`) files.
 
 ### Directory of Text Files (`TextLoader`)
 
-`TextLoader` supports loading corpora directly from a directory of `.txt` files with automatic date parsing and optional categorization:
+`TextLoader` supports loading corpora directly from a directory of `.txt` and Markdown files, one document per file, with automatic date parsing and optional categorization:
 
 ```python
 TextLoader(
@@ -25,12 +25,13 @@ TextLoader(
     id_column="id_text",       # document ID column (default: "id_text")
     filename_date_pattern=r"^(\d{4})[-_](\d{2})[-_](\d{2})",  # date regex pattern (None to skip)
     group_column="Country",    # optional; populates column from 1-level subdirectories
-    recursive=False,           # recursively search for .txt files
+    recursive=False,           # recursively search for .txt and .md files
 )
 ```
 
 - **Date parsing**: Filename stems are matched against `filename_date_pattern` (extracting year, month, day). Files with unparseable dates are retained with `date = NaT` and a warning is logged with the count. Pass `filename_date_pattern=None` to skip date parsing entirely.
 - **Group columns & IDs**: When `group_column` is provided and the directory contains subdirectories, `group_column` is populated with the subdirectory name, and `id_text` is prefixed with the group name (`f"{group}_{stem}"`) to ensure uniqueness across groups.
+- **Markdown**: `.md` and `.markdown` files are read as plain text, so headings, emphasis and links reach the cleaner as written.
 - **Encoding**: Text files are read using UTF-8 with `errors="ignore"` to handle lossy encodings gracefully.
 
 

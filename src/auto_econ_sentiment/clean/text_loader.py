@@ -6,16 +6,20 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+# File types read as one document each from a directory input. Markdown is read as
+# plain text, so its markup reaches the cleaner unchanged.
+DOCUMENT_SUFFIXES = (".txt", ".md", ".markdown")
+
 
 class TextLoader:
-    """Load a tabular (CSV, Excel, Parquet) corpus or directory of raw .txt files,
+    """Load a tabular (CSV, Excel, Parquet) corpus or directory of raw .txt/.md files,
     validate columns/files, and standardize text and parsed dates.
 
     Parameters
     ----------
     file_path : str or Path
         Path to a single tabular file (.csv, .xlsx/.xls, .parquet/.parquet.gzip/.parquet.gz)
-        or a directory containing .txt document files.
+        or a directory containing .txt or .md (Markdown) document files.
     text_column : str, default "text"
         Name of the column containing document text (used for tabular inputs; ignored for
         directory inputs).
@@ -35,7 +39,7 @@ class TextLoader:
         If provided and the directory contains subdirectories, each top-level subdirectory name
         populates this column for its files.
     recursive : bool, default False
-        Whether to recursively scan for .txt files within subdirectories.
+        Whether to recursively scan for .txt and .md files within subdirectories.
     """
 
     def __init__(
@@ -71,6 +75,15 @@ class TextLoader:
                 return pd.NaT, True
         return pd.NaT, True
 
+    @staticmethod
+    def _document_files(folder: Path, recursive: bool) -> list[Path]:
+        """Return the plain-text and Markdown documents in ``folder``, sorted by path."""
+        pattern = "**/*" if recursive else "*"
+        return sorted(
+            path for path in folder.glob(pattern)
+            if path.is_file() and path.suffix.lower() in DOCUMENT_SUFFIXES
+        )
+
     def _load_directory(self, dir_path: Path) -> pd.DataFrame:
         if self.text_column != "text" or self.date_column != "date":
             logger.debug(
@@ -86,11 +99,7 @@ class TextLoader:
         if self.group_column is not None and len(subdirs) > 0:
             for subdir in subdirs:
                 group_name = subdir.name
-                txt_files = (
-                    sorted(subdir.rglob("*.txt"))
-                    if self.recursive
-                    else sorted(subdir.glob("*.txt"))
-                )
+                txt_files = self._document_files(subdir, self.recursive)
                 for txt_file in txt_files:
                     text_content = txt_file.read_text(encoding="utf-8", errors="ignore")
                     parsed_date, is_unparseable = self._parse_filename_date(txt_file.stem)
@@ -105,7 +114,7 @@ class TextLoader:
                     }
                     records.append(record)
 
-            top_level_files = sorted(dir_path.glob("*.txt"))
+            top_level_files = self._document_files(dir_path, recursive=False)
             for txt_file in top_level_files:
                 text_content = txt_file.read_text(encoding="utf-8", errors="ignore")
                 parsed_date, is_unparseable = self._parse_filename_date(txt_file.stem)
@@ -120,11 +129,7 @@ class TextLoader:
                 }
                 records.append(record)
         else:
-            txt_files = (
-                sorted(dir_path.rglob("*.txt"))
-                if self.recursive
-                else sorted(dir_path.glob("*.txt"))
-            )
+            txt_files = self._document_files(dir_path, self.recursive)
             for txt_file in txt_files:
                 text_content = txt_file.read_text(encoding="utf-8", errors="ignore")
                 parsed_date, is_unparseable = self._parse_filename_date(txt_file.stem)
@@ -141,7 +146,7 @@ class TextLoader:
                 records.append(record)
 
         if not records:
-            raise ValueError(f"No .txt files found in directory: {self.file_path}")
+            raise ValueError(f"No .txt or .md files found in directory: {self.file_path}")
 
         if self.filename_date_pattern is not None and unparseable_count > 0:
             logger.warning(

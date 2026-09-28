@@ -11,6 +11,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 ### Added
 - Added directory-of-`.txt` corpus loading in `TextLoader`, supporting flat directories as well as categorized subdirectories via `group_column`.
 - Added regex-based filename date parsing (`filename_date_pattern`) to `TextLoader`, retaining unparseable dates as `NaT` with a logged warning instead of silently dropping rows.
+- Added Markdown (`.md`, `.markdown`) files to `TextLoader` directory input, read as plain text alongside `.txt` files.
 - Added a `recursive` flag for directory traversal and automatic unique `id_column` generation for text corpora.
 - Added `ParagraphSegmenter` in `clean/text_segmentation.py` to split documents into paragraph-level rows by blank lines, with a configurable `paragraph_number` column. It composes with `TextSegmenter`, so sentence rows inherit their paragraph number.
 - Added `tokenizer_name` attribute on `TextSegmenter` exposing whether `nltk_punkt` or `regex_fallback` is active, so a degraded run is identifiable after the fact.
