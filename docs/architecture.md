@@ -127,9 +127,12 @@ Utilities for visualizing text before and after cleaning (for exploratory and de
 
 ## 4. Tests (`tests/`)
 
-The test suite covers the full pipeline across six dedicated modules in `tests/`:
+The test suite covers the full pipeline across nine dedicated modules in `tests/`:
 
 - `tests/test_pipeline.py`: Full-pipeline integration, `TextLoader` validation, `TextCleaner` normalization, lexical scoring, and package public API imports.
+- `tests/test_text_loader.py`: Directory-of-text loading for `.txt` and Markdown files, filename date parsing, group columns and recursion.
+- `tests/test_paragraph_segmentation.py`: Paragraph splitting and paragraph numbers inherited by sentence rows.
+- `tests/test_sentiment_llm.py`: LLM prompt formatting, response parsing, scoring scales and pipeline integration, with live-provider tests skipped by default.
 - `tests/test_sentiment_transformers.py`: Lazy imports without optional dependencies, explicit `label_map` validation, and prediction post-processing.
 - `tests/test_text_segmentation.py`: Sentence splitting via NLTK/regex, minimum character threshold handling, and index alignment across sentence rows.
 - `tests/test_transformer_config.py`: Configuration resolution across modern flat keys and legacy nested YAML schemas.

@@ -4,22 +4,21 @@ This document outlines the planned future features for `auto-econ-sentiment` and
 
 Research-planning notes, paper feedback, and transformer refactor scratch docs can live locally under `docs/feedback/`. That directory is ignored by git so exploratory notes can evolve without becoming release documentation.
 
-## Current Release: `v0.3.0` (Sentence Segmentation and Config Overhaul)
-The `v0.3.0` release introduces robust sentence-level segmentation for transformer models and modernizes configuration handling.
+## Current Release: `v1.0.0` (Stable Release)
+`v1.0.0` is the first stable release and the version the accompanying paper's results are produced with. It brings the `dev` integration work together with comparable net-sentiment columns across every scoring method.
 
-### Implemented Scope (`v0.3.0`)
-1. `TextSegmenter` in `src/auto_econ_sentiment/clean/text_segmentation.py` using NLTK `sent_tokenize` with a regex sentence-boundary fallback.
-2. Direct document-to-sentence explosion during transformer sentence-level scoring (`bysentence`).
-3. Top-level `lexical` and `transformer` configuration keys in `params.yaml` with backward-compatible resolvers for legacy nested keys.
-4. Per-model overrides for `min_sentence_chars` and `sentence_probability_cutoff`.
-5. Expanded multi-module test coverage across six test suites in `tests/`.
+### Implemented Scope (`v1.0.0`)
+1. **Directory-of-Text Ingestion (`PR #12`):** `TextLoader` reads directories of `.txt` and Markdown files, one document per file, with dates parsed from filenames.
+2. **Multilevel Text Segmentation (`PR #13`):** `ParagraphSegmenter`, plus sentence splitting that is robust to financial abbreviations and consistent whether or not NLTK is available.
+3. **Continuous Probability Aggregation (`PR #14`):** `sentence_probability_aggregation: mean` for a continuous document score alongside the count and share metrics.
+4. **LLM Single-Shot Sentiment Scoring (`PR #15`):** A provider-neutral LLM scoring interface behind the optional `llm` extra.
+5. **Net-Sentiment Columns:** Every score ending in `_net` is on $[-1, 1]$ with zero as neutral. Lexical scores gain `{dictionary}_sentiment_{method}_net`, and sentence-level transformer scores gain `{model}_sentiment_posneg_net` and `{model}_sentiment_allsentences_net`.
+6. **Sentence Audit Output:** The sentence-level export carries each sentence's number and text.
+7. **Stance Model Labels:** Corrected FOMC-RoBERTa and WCB stance label mappings in `params.yaml`.
 
-### Upcoming Roadmap (In Active Development on `dev`)
-Key features currently merged into the `dev` integration branch for the next major pipeline release:
-1. **Directory-of-Text Ingestion (`PR #12`):** Direct support in `TextLoader` for loading entire directories of raw `.txt` files, extracting document identifiers and dates automatically from filenames.
-2. **Multilevel Text Segmentation (`PR #13`):** Enhanced chunking supporting both paragraph-level blocks and robust sentence boundary detection for complex financial abbreviations.
-3. **Continuous Probability Aggregation (`PR #14`):** Support for `sentence_probability_aggregation: mean` to calculate document sentiment via continuous probability averaging across sentences alongside existing count and share metrics.
-4. **LLM Single-Shot Sentiment Scoring (`PR #15`):** Provider-neutral LLM scoring interface for prompt-based economic sentiment analysis with structured schema enforcement.
+### Planned
+1. **Lemmatization:** A lemmatizer in `TextCleaner` producing a `text_lemmas` column that dictionaries can match against, alongside `text_tokens_str` and `text_stems`.
+2. **Paragraph-Level Scoring:** `ParagraphSegmenter` splits documents into paragraphs, but the pipeline segments only by sentence. A segmentation setting in the transformer and LLM config would let models score paragraphs as the unit between the sentence and the whole document.
 
 ---
 
@@ -33,10 +32,10 @@ Releases are automated via GitHub Actions (`.github/workflows/release.yml` and `
 When deploying a release, follow these steps after merging the relevant PR into `main`:
 
 #### Step 1: Verify Version in Codebase
-1. Verify `pyproject.toml` contains the target version (e.g. `version = "0.3.0"`).
+1. Verify `pyproject.toml` contains the target version (e.g. `version = "1.0.0"`).
 2. Ensure all changes are documented in `CHANGELOG.md` under the version header.
 3. Commit version updates following the commit convention:
-   `UPDATE project versions for v0.3.0 release`
+   `UPDATE project versions for v1.0.0 release`
 4. Merge the final update into `main`.
 
 #### Step 2: Cut the Release via Git Tags
@@ -48,10 +47,10 @@ git checkout main
 git pull origin main
 
 # 2. Create an annotated tag (-a creates annotation, -m sets message)
-git tag -a v0.3.0 -m "Release v0.3.0 - Transformer sentence segmentation overhaul and docs"
+git tag -a v1.0.0 -m "Release v1.0.0 - Stable release"
 
 # 3. Push the tag to GitHub
-git push origin v0.3.0
+git push origin v1.0.0
 ```
 
 #### Step 3: Automation Workflow Execution
