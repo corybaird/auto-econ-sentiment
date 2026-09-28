@@ -100,7 +100,7 @@ def test_loader_txt_empty_directory(tmp_path: Path):
     empty_dir = tmp_path / "empty_dir"
     empty_dir.mkdir()
 
-    with pytest.raises(ValueError, match="No .txt files found"):
+    with pytest.raises(ValueError, match="No .txt or .md files found"):
         TextLoader(file_path=empty_dir)
 
 
@@ -173,3 +173,25 @@ def test_loader_txt_get_summary_stats(tmp_path: Path):
     assert len(counts) == 2
     assert len(text_stats) == 2
     assert len(date_ranges) == 2
+
+
+def test_loader_reads_markdown_alongside_txt(tmp_path: Path):
+    (tmp_path / "2024-01-31_statement.txt").write_text("Plain text statement.")
+    (tmp_path / "2024-03-20_statement.md").write_text("# Statement\n\nMarkdown statement.")
+    (tmp_path / "2024-05-01_notes.markdown").write_text("Long-form Markdown.")
+    (tmp_path / "2024-06-12_data.csv").write_text("ignored,columns\n1,2\n")
+
+    df = TextLoader(file_path=tmp_path).get_data()
+
+    assert df["id_text"].tolist() == ["2024-01-31_statement", "2024-03-20_statement", "2024-05-01_notes"]
+    assert df.loc[1, "text"] == "# Statement\n\nMarkdown statement."
+    assert df["date"].tolist() == [pd.Timestamp("2024-01-31"), pd.Timestamp("2024-03-20"), pd.Timestamp("2024-05-01")]
+
+
+def test_loader_markdown_only_directory(tmp_path: Path):
+    (tmp_path / "2024-01-31.md").write_text("Only Markdown here.")
+
+    df = TextLoader(file_path=tmp_path).get_data()
+
+    assert len(df) == 1
+    assert df.loc[0, "text"] == "Only Markdown here."
