@@ -36,6 +36,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 - Added `sentence_number` and `sentence_text` columns to the sentence-level transformer probability export, so each row can be read against the sentence it scored.
 
 ### Changed
+- Changed the default LLM prompt so polarity follows the package sign convention: positive or hawkish text is +1 and negative or dovish text is -1, matching the FOMC-RoBERTa and WCB stance mappings. The default `prompt_version` is now `v2`; the earlier `v1` prompt scored hawkish as -1.
 - Changed the package classifier from `3 - Alpha` to `5 - Production/Stable` for the first stable release.
 - Renamed `docs/ROADMAP.md` to `docs/roadmap.md` and reviewed every docs page for v1.0.0. The README example for FOMC-RoBERTa now uses the corrected label mapping, the architecture page covers the LLM scorer and paragraph segmenter, and the paragraph example runs on the original text, since the cleaner collapses newlines.
 - Changed `TextSegmenter.split_text` to apply newline pre-splitting, abbreviation protection, and fragment merging in a unified pipeline before both the NLTK and regex tokenizers.
@@ -44,6 +45,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 - Updated `docs/data.md` with directory-of-txt loading, constructor parameters, mean-aggregation output columns, and LLM output columns.
 
 ### Fixed
+- Fixed the pipeline failing with a missing-column error whenever `text_column` was not `text`. `TextLoader` renames the configured column to `text`, and the cleaning and lexical stages now read it under that name.
 - Fixed the default `params.yaml` label mappings for the two stance models. FOMC-RoBERTa had `LABEL_0` (dovish) and `LABEL_1` (hawkish) swapped, so its scores carried the wrong sign. The WCB stance model mapped `LABEL_0` (neutral) and `LABEL_2` (dovish) the wrong way round and then inverted the sign. Both now map hawkish to +1 and dovish to -1.
 - Fixed `TextSegmenter` silently degrading to a substantially weaker regex tokenizer when NLTK or its `punkt` data was unavailable, logging only a warning. Measured over 230 FOMC statements, the fallback produced 4,245 sentences of which 37.9% were non-sentential fragments, against 3,302 sentences and 21.5% for `punkt` -- so the same corpus could differ by 16 percentage points of garbage with no visible error. The two paths now converge (3,631 vs 3,633 sentences, 28.6% both), and `drop_invalid=True` brings the garbage share to 7.2%.
 - Fixed name rosters being shredded into fragments by the regex fallback: sentences ending on a single initial went from 1,023 (24.1%) to 0, false abbreviation splits from 113 to 0, and missed newline boundaries from 420 to 0.

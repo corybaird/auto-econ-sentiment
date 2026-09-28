@@ -14,11 +14,13 @@ from auto_econ_sentiment.models.sentiment_base import SentimentBase
 
 logger = logging.getLogger(__name__)
 
+# Polarity follows the package-wide sign convention: positive tone and hawkish stance
+# are +1, matching the FOMC-RoBERTa and WCB stance mappings in params.yaml.
 DEFAULT_PROMPT_TEMPLATE = (
     "You are an economic sentiment analysis expert. Analyze the sentiment of the following economic text.\n"
     "Respond ONLY with a valid JSON object in this exact format:\n"
     "{\n"
-    '  "polarity": <integer: -1 for negative/hawkish, 0 for neutral, 1 for positive/dovish>,\n'
+    '  "polarity": <integer: -1 for negative/dovish, 0 for neutral, 1 for positive/hawkish>,\n'
     '  "confidence": <float: between 0.0 and 1.0 indicating certainty>\n'
     "}\n\n"
     "Text:\n{text}"
@@ -57,7 +59,8 @@ class SentimentLLM(SentimentBase):
         self.model_name = model_name
         self.model_name_short = model_name_short
         self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
-        self.prompt_version = prompt_version or "v1"
+        # v2 flipped the stance direction so hawkish is +1; v1 scored hawkish as -1.
+        self.prompt_version = prompt_version or "v2"
         self.provider = str(provider).lower()
         self.base_url = base_url
         self.api_key_env = api_key_env

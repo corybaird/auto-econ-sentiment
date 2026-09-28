@@ -315,3 +315,28 @@ def test_version_is_string():
     from auto_econ_sentiment import __version__
     assert isinstance(__version__, str)
     assert len(__version__) > 0
+
+
+def test_pipeline_runs_with_custom_column_names(tmp_path):
+    csv_path = tmp_path / "custom.csv"
+    pd.DataFrame({
+        "body": ["Growth is strong and the outlook is stable.", "Risks have increased and conditions weakened."],
+        "published": ["2024-01-31", "2024-03-20"],
+    }).to_csv(csv_path, index=False)
+    analyzer = AutoEconSentiment(
+        import_file_path=str(csv_path),
+        text_column="body",
+        date_column="published",
+        export_path=str(tmp_path / "out"),
+    )
+
+    analyzer.run(
+        clean_config={"tokenize": True},
+        dictionaries={"unstemmed": ["lm"], "stemmed": []},
+        aggregation_methods=["posneg"],
+        export_results=True,
+    )
+
+    assert "text_clean" in analyzer.df_clean.columns
+    assert len(analyzer.df_sent_lexical) == 2
+    assert (tmp_path / "out" / "sentiment_all_results.parquet.gzip").exists()
