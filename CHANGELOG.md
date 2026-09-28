@@ -41,6 +41,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 - Updated `docs/data.md` with directory-of-txt loading, constructor parameters, mean-aggregation output columns, and LLM output columns.
 
 ### Fixed
+- Fixed the pipeline failing with a missing-column error whenever `text_column` was not `text`. `TextLoader` renames the configured column to `text`, and the cleaning and lexical stages now read it under that name.
 - Fixed the default `params.yaml` label mappings for the two stance models. FOMC-RoBERTa had `LABEL_0` (dovish) and `LABEL_1` (hawkish) swapped, so its scores carried the wrong sign. The WCB stance model mapped `LABEL_0` (neutral) and `LABEL_2` (dovish) the wrong way round and then inverted the sign. Both now map hawkish to +1 and dovish to -1.
 - Fixed `TextSegmenter` silently degrading to a substantially weaker regex tokenizer when NLTK or its `punkt` data was unavailable, logging only a warning. Measured over 230 FOMC statements, the fallback produced 4,245 sentences of which 37.9% were non-sentential fragments, against 3,302 sentences and 21.5% for `punkt` -- so the same corpus could differ by 16 percentage points of garbage with no visible error. The two paths now converge (3,631 vs 3,633 sentences, 28.6% both), and `drop_invalid=True` brings the garbage share to 7.2%.
 - Fixed name rosters being shredded into fragments by the regex fallback: sentences ending on a single initial went from 1,023 (24.1%) to 0, false abbreviation splits from 113 to 0, and missed newline boundaries from 420 to 0.
