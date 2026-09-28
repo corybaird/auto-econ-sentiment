@@ -12,13 +12,16 @@ Research-planning notes, paper feedback, and transformer refactor scratch docs c
 2. **Multilevel Text Segmentation (`PR #13`):** `ParagraphSegmenter`, plus sentence splitting that is robust to financial abbreviations and consistent whether or not NLTK is available.
 3. **Continuous Probability Aggregation (`PR #14`):** `sentence_probability_aggregation: mean` for a continuous document score alongside the count and share metrics.
 4. **LLM Single-Shot Sentiment Scoring (`PR #15`):** A provider-neutral LLM scoring interface behind the optional `llm` extra.
-5. **Net-Sentiment Columns:** Every score ending in `_net` is on $[-1, 1]$ with zero as neutral. Lexical scores gain `{dictionary}_sentiment_{method}_net`, and sentence-level transformer scores gain `{model}_sentiment_posneg_net` and `{model}_sentiment_allsentences_net`.
-6. **Sentence Audit Output:** The sentence-level export carries each sentence's number and text.
-7. **Stance Model Labels:** Corrected FOMC-RoBERTa and WCB stance label mappings in `params.yaml`.
+5. **Net-Sentiment Columns (`PR #17`, `PR #18`):** Every score ending in `_net` is on $[-1, 1]$ with zero as neutral. Lexical scores gain `{dictionary}_sentiment_{method}_net`, and sentence-level transformer scores gain `{model}_sentiment_posneg_net` and `{model}_sentiment_allsentences_net`.
+6. **Sentence Audit Output (`PR #18`):** The sentence-level export carries each sentence's number and text.
+7. **Stance Model Labels (`PR #19`):** Corrected FOMC-RoBERTa and WCB stance label mappings in `params.yaml`.
+8. **Markdown Input (`PR #20`):** Directory input reads `.md` and `.markdown` files alongside `.txt`.
 
 ### Planned
 1. **Lemmatization:** A lemmatizer in `TextCleaner` producing a `text_lemmas` column that dictionaries can match against, alongside `text_tokens_str` and `text_stems`.
-2. **Paragraph-Level Scoring:** `ParagraphSegmenter` splits documents into paragraphs, but the pipeline segments only by sentence. A segmentation setting in the transformer and LLM config would let models score paragraphs as the unit between the sentence and the whole document.
+2. **Paragraph-Level Scoring:** `ParagraphSegmenter` splits documents into paragraphs, but the pipeline segments only by sentence. A segmentation setting in the transformer and LLM config would let models score paragraphs as the unit between the sentence and the whole document. `TextCleaner` currently collapses newlines, so this also needs a cleaning option that keeps paragraph breaks in `text_clean`.
+3. **Sentence-Level Lexical Matches:** Dictionary matches are reported per document. Reporting them per sentence, aligned with the transformer sentence export, would let the matched words be read against each sentence's class probabilities without a separate script.
+4. **LLM Net-Sentiment Parity:** Sentence-level LLM scoring reports `{llm}_net_sentiment` over classified sentences. Adding `{llm}_sentiment_posneg_net` and `{llm}_sentiment_allsentences_net` would put LLMs on the same denominators as the lexical and transformer scores.
 
 ---
 
