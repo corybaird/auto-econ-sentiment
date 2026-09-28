@@ -4,6 +4,7 @@ from pathlib import Path
 from auto_econ_sentiment.clean.text_loader import TextLoader
 from auto_econ_sentiment.clean.text_clean import TextCleaner
 from auto_econ_sentiment.models.sentiment_lexical import SentimentLexical
+from auto_econ_sentiment.pipeline import AutoEconSentiment
 
 
 # ── Realistic Fed statement text ────────────────────────────────────────────
@@ -235,6 +236,49 @@ def test_sentiment_allwords_uses_text_column_override(tmp_path):
 
     assert result["toy_counttoken_total_allwords"].iloc[0] == 1
     assert result["toy_sentiment_allwords"].iloc[0] == 2
+    assert result["toy_sentiment_allwords_net"].iloc[0] == 1
+
+
+@pytest.mark.parametrize("text, expected_net", [
+    ("growth growth growth contraction", 0.5),
+    ("contraction", -1.0),
+    ("no dictionary words here", 0.0),
+])
+def test_sentiment_posneg_net_recenters_on_zero(tmp_path, text, expected_net):
+    dictionary_path = tmp_path / "dict.yaml"
+    dictionary_path.write_text(
+        "toy:\n"
+        "  positive:\n"
+        "    - growth\n"
+        "  negative:\n"
+        "    - contraction\n"
+    )
+    analyzer = SentimentLexical(df_input=pd.DataFrame({"text": [text]}), dictionary_path=str(dictionary_path))
+
+    result = analyzer.sentiment_pipeline(dictionary_name="toy", method="posneg")
+
+    assert result["toy_sentiment_posneg_net"].iloc[0] == pytest.approx(expected_net)
+    assert result["toy_sentiment_posneg"].iloc[0] == pytest.approx(expected_net + 1)
+
+
+def test_stemmed_lexical_columns_keep_net_last(tmp_path, fomc_df):
+    csv_path = tmp_path / "fomc.csv"
+    fomc_df.to_csv(csv_path, index=False)
+    analyzer = AutoEconSentiment(
+        import_file_path=str(csv_path),
+        text_column="text",
+        date_column="date",
+        export_path=str(tmp_path / "out"),
+    )
+    analyzer.run(
+        clean_config={"tokenize": True, "stem": True},
+        dictionaries={"unstemmed": [], "stemmed": ["bn"]},
+        aggregation_methods=["posneg"],
+        export_results=False,
+    )
+
+    assert "bn_sentiment_posneg_stem" in analyzer.df_sent_lexical.columns
+    assert "bn_sentiment_posneg_stem_net" in analyzer.df_sent_lexical.columns
 
 
 def test_sentiment_unknown_dictionary(lexical):

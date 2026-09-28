@@ -82,6 +82,8 @@ Computes bag-of-words sentiment against multiple central bank and financial dict
 *   **`allwords`**: Normalizes sentiment by the total number of tokens in the entire document.
     $$ \text{Sentiment}_{\text{allwords}} = 1 + \frac{N_{\text{pos}} - N_{\text{neg}}}{N_{\text{total}}} $$
 
+Both scores keep the Apel-Blix Grimaldi $+1$ convention on $[0, 2]$. Each is paired with a `_net` column that subtracts the one, putting it on $[-1, 1]$ with zero as neutral, the scale transformer scores use. See the score-scale table in [data.md](data.md).
+
 ### 3.5 `models/sentiment_transformers.py` - Optional Transformer Sentiment Model
 `SentimentTransformers` wraps Hugging Face sequence-classification models behind optional dependencies. `torch` and `transformers` are imported lazily so the base package can still run lexical sentiment without installing or downloading transformer models.
 
@@ -143,6 +145,8 @@ uv run pytest
 | `test_sentiment_unknown_dictionary` | Confirms a clear error for unknown dictionary names. |
 | `test_sentiment_word_counts_nonzero` | Verifies that matched sentiment word counts are > 0 on real data. |
 | `test_sentiment_allwords_uses_text_column_override` | Confirms lexical `allwords` uses the active text-column override. |
+| `test_sentiment_posneg_net_recenters_on_zero` | Confirms the lexical `_net` column is the $[0, 2]$ score minus one, including zero for documents with no match. |
+| `test_stemmed_lexical_columns_keep_net_last` | Confirms stemmed dictionaries name their net column `{dictionary}_sentiment_{method}_stem_net`. |
 | `test_transformer_module_imports_without_optional_dependencies` | Confirms transformer module import does not require optional dependencies. |
 | `test_transformer_postprocess_predictions_uses_explicit_label_map` | Verifies transformer label maps drive directional scores. |
 | `test_transformer_sentence_aggregation_counts_confident_labels` | Tests sentence aggregation by probability cutoff and `id_text`. |

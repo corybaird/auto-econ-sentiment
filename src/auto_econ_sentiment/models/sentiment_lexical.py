@@ -137,6 +137,10 @@ class SentimentLexical(SentimentBase):
                 self.logger.warning(f"Unknown aggregation method: {method}, no sentiment score calculated")
             
             df_count = df_count.add_suffix(f"_{method}")
+            # The score above keeps the Apel-Blix Grimaldi +1 convention on [0, 2]. The
+            # _net column recenters it on [-1, 1], the scale the transformer scores use.
+            if f"sentiment_{method}" in df_count.columns:
+                df_count[f"sentiment_{method}_net"] = df_count[f"sentiment_{method}"] - 1
             return df_count
         except Exception as e:
             self.logger.error(f"Error in sentiment aggregation: {e}")

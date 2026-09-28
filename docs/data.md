@@ -57,7 +57,24 @@ Lexical columns follow this pattern:
 {dictionary}_words_positive_{method}
 {dictionary}_words_negative_{method}
 {dictionary}_sentiment_{method}
+{dictionary}_sentiment_{method}_net
 ```
+
+Dictionaries matched against stemmed text (`stemmed` in `params.yaml`) insert `_stem` before the net suffix, for example `bn_sentiment_posneg_stem` and `bn_sentiment_posneg_stem_net`.
+
+## Score Scales
+
+Every column ending in `_net` is on $[-1, 1]$ with zero as neutral, so lexical and transformer scores can be compared directly.
+
+| Column | Range | Neutral | Notes |
+|---|---|---|---|
+| `{dictionary}_sentiment_{method}` | $[0, 2]$ | 1 | Apel-Blix Grimaldi convention: the net score plus one. |
+| `{dictionary}_sentiment_{method}_net` | $[-1, 1]$ | 0 | The same score recentered on zero. |
+| `{model}_sentiment_bysentence` | $[-1, 1]$ | 0 | Net count over sentences that clear the probability cutoff. |
+| `{model}_sentiment_byalltext` | $[-1, 1]$ | 0 | Label direction times the predicted class probability. |
+| `{model}_net_sentiment` | $[-1, 1]$ | 0 | Positive share minus negative share; needs `output_schema: shares`. |
+
+For example, a document with three positive and one negative Hubert-Labondance match has `hubert_sentiment_posneg = 1.5` and `hubert_sentiment_posneg_net = 0.5`.
 
 ## Transformer Columns
 

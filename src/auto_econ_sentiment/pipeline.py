@@ -174,6 +174,13 @@ class AutoEconSentiment:
         return expanded_configs
 
     @staticmethod
+    def _stem_column_name(col_name: str) -> str:
+        """Mark a lexical column as stem-matched, keeping ``_net`` as the last suffix."""
+        if col_name.endswith("_net"):
+            return f"{col_name[:-len('_net')]}_stem_net"
+        return f"{col_name}_stem"
+
+    @staticmethod
     def resolve_lexical_config(config: dict) -> dict:
         """Read the lexical block from a top-level ``lexical`` key.
 
@@ -422,7 +429,7 @@ class AutoEconSentiment:
                     )
                     if text == "text_stems":
                         df_sent = df_sent.rename(
-                            lambda col_name: f"{col_name}_stem" if sentiment in col_name else col_name,
+                            lambda col_name: self._stem_column_name(col_name) if sentiment in col_name else col_name,
                             axis="columns",
                         )
                     df_sent_lexical.append(df_sent)
