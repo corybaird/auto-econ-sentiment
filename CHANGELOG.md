@@ -30,6 +30,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 - Added a `{dictionary}_sentiment_{method}_net` column to lexical output that recenters each score on $[-1, 1]$, the scale transformer scores use. The existing `{dictionary}_sentiment_{method}` column keeps the $[0, 2]$ Apel-Blix Grimaldi convention.
   Stemmed dictionaries name it `{dictionary}_sentiment_{method}_stem_net`, so `_net` is always the last suffix.
 - Added a score-scale reference table to `docs/data.md`.
+- Added `{model}_sentiment_posneg_net` and `{model}_sentiment_allsentences_net` to cutoff-mode sentence-level transformer output, dividing the net sentence count by the sentences that clear the cutoff and by every segmented sentence, mirroring the lexical `posneg` and `allwords` pair. `{model}_count_sentences` records the segmented sentence count.
+- Added `sentence_number` and `sentence_text` columns to the sentence-level transformer probability export, so each row can be read against the sentence it scored.
 
 ### Changed
 - Changed `TextSegmenter.split_text` to apply newline pre-splitting, abbreviation protection, and fragment merging in a unified pipeline before both the NLTK and regex tokenizers.
