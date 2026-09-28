@@ -36,6 +36,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ### Changed
 - Changed the package classifier from `3 - Alpha` to `5 - Production/Stable` for the first stable release.
+- Renamed `docs/ROADMAP.md` to `docs/roadmap.md` and reviewed every docs page for v1.0.0. The README example for FOMC-RoBERTa now uses the corrected label mapping, the architecture page covers the LLM scorer and paragraph segmenter, and the paragraph example runs on the original text, since the cleaner collapses newlines.
 - Changed `TextSegmenter.split_text` to apply newline pre-splitting, abbreviation protection, and fragment merging in a unified pipeline before both the NLTK and regex tokenizers.
 - Expanded `_FALLBACK_BOUNDARY` to include opening quotes and brackets in its lookahead character class.
 - Changed `src/auto_econ_sentiment/__init__.py` and `models/__init__.py` to export `SentimentLLM`.
