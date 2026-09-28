@@ -8,7 +8,7 @@ Edit `params.yaml`, then run:
 uv run python -m src.auto_econ_sentiment.pipeline
 ```
 
-The default config keeps transformer models disabled. Set `models.transformer.enabled: true` after installing the transformer extra.
+The default config keeps transformer models disabled. Set `transformer.enabled: true` after installing the transformer extra.
 
 ## Run With Python
 

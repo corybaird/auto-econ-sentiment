@@ -39,13 +39,13 @@ TextLoader(
 
 | Path | Description |
 | --- | --- |
-| `cleaned.parquet.gzip` | Cleaned text, tokens, stems, and document IDs. |
 | `sentiment_lexical.parquet.gzip` | Lexical counts, matched words, and sentiment scores. |
 | `sentiment_transformer.parquet.gzip` | Optional transformer labels, probabilities, counts, shares, and scores. |
 | `sentiment_transformer_sentence_probabilities.parquet.gzip` | Optional sentence-level transformer probabilities. |
 | `sentiment_llm.parquet.gzip` | Optional LLM polarities, confidences, scores, and metadata. |
 | `sentiment_llm_sentence_probabilities.parquet.gzip` | Optional sentence-level LLM polarities and confidences. |
-| `sentiment_all_results.parquet.gzip` | Combined output used by notebooks and paper scripts. |
+| `sentiment_all_results.parquet.gzip` | Combined output uniting cleaned text with lexical and transformer results. |
+| `cleaned.parquet.gzip` | Cleaned text, tokens, stems, and document IDs (exported when invoking `TextCleaner.export_data()`). |
 
 ## Lexical Columns
 
