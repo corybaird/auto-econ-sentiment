@@ -280,3 +280,37 @@ def test_per_model_sentence_settings_override_the_top_level_defaults():
     assert expanded[0]["min_sentence_chars"] == 15
     assert expanded[0]["sentence_probability_cutoff"] == 0.8
     assert expanded[0]["sentence_probability_aggregation"] == "mean"
+
+
+def test_sentence_aggregation_posneg_and_allsentences_net():
+    analyzer = _transformer_shell()
+    analyzer.output_schema = "shares"
+    analyzer.df_labels = _labels_frame(
+        [
+            ("a", 0.9, 0.05, 0.05),
+            ("a", 0.85, 0.10, 0.05),
+            ("a", 0.05, 0.05, 0.90),
+            ("a", 0.40, 0.30, 0.30),
+            ("c", 0.40, 0.30, 0.30),
+        ]
+    )
+
+    df_score, _ = analyzer.sentiment_bysentence(sentence_probability_cutoff=0.7)
+
+    assert df_score.loc["a", "fake_count_sentences"] == 4
+    assert df_score.loc["a", "fake_sentiment_posneg_net"] == pytest.approx(-1 / 3)
+    assert df_score.loc["a", "fake_sentiment_allsentences_net"] == pytest.approx(-1 / 4)
+    # No sentence clears the cutoff: PosNeg is unmeasured, AllSentences is neutral.
+    assert pd.isna(df_score.loc["c", "fake_sentiment_posneg_net"])
+    assert df_score.loc["c", "fake_sentiment_allsentences_net"] == pytest.approx(0.0)
+
+
+def test_mean_aggregation_omits_sentence_count_denominators():
+    analyzer = _transformer_shell()
+    analyzer.output_schema = "shares"
+    analyzer.df_labels = _labels_frame([("a", 0.9, 0.05, 0.05), ("a", 0.05, 0.05, 0.90)])
+
+    df_score, _ = analyzer.sentiment_bysentence(sentence_probability_aggregation="mean")
+
+    assert "fake_sentiment_posneg_net" not in df_score.columns
+    assert "fake_sentiment_allsentences_net" not in df_score.columns
