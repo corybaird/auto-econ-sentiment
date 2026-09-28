@@ -5,7 +5,7 @@ This document outlines the planned future features for `auto-econ-sentiment` and
 Research-planning notes, paper feedback, and transformer refactor scratch docs can live locally under `docs/feedback/`. That directory is ignored by git so exploratory notes can evolve without becoming release documentation.
 
 ## Current Release: `v1.0.0` (Stable Release)
-`v1.0.0` is the first stable release and the version the accompanying paper's results are produced with. It brings the `dev` integration work together with comparable net-sentiment columns across every scoring method.
+`v1.0.0` is the first stable release. `v1.0.1` adds two fixes that missed the v1.0.0 tag, the custom text-column fix and the hawkish = +1 LLM prompt, and is the version the accompanying paper's results are produced with. It brings the `dev` integration work together with comparable net-sentiment columns across every scoring method.
 
 ### Implemented Scope (`v1.0.0`)
 1. **Directory-of-Text Ingestion (`PR #12`):** `TextLoader` reads directories of `.txt` and Markdown files, one document per file, with dates parsed from filenames.
@@ -42,6 +42,8 @@ When deploying a release, follow these steps after merging the relevant PR into 
 4. Merge the final update into `main`.
 
 #### Step 2: Cut the Release via Git Tags
+Tag only once every pull request meant for the release is merged into `main`. Pushing the tag publishes to PyPI straight away, and PyPI never lets a published version be replaced, so a missed change needs a new patch version (as happened with `v1.0.1`).
+
 Create an annotated Git tag locally and push it to GitHub:
 
 ```bash
