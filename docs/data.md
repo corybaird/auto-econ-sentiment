@@ -41,11 +41,11 @@ TextLoader(
 | --- | --- |
 | `sentiment_lexical.parquet.gzip` | Lexical counts, matched words, and sentiment scores. |
 | `sentiment_transformer.parquet.gzip` | Optional transformer labels, probabilities, counts, shares, and scores. |
-| `sentiment_transformer_sentence_probabilities.parquet.gzip` | Optional sentence-level transformer probabilities. |
+| `sentiment_transformer_sentence_probabilities.parquet.gzip` | Optional sentence-level transformer probabilities, one row per sentence with `id_text`, `sentence_number` and `sentence_text`. |
 | `sentiment_llm.parquet.gzip` | Optional LLM polarities, confidences, scores, and metadata. |
 | `sentiment_llm_sentence_probabilities.parquet.gzip` | Optional sentence-level LLM polarities and confidences. |
-| `sentiment_all_results.parquet.gzip` | Combined output uniting cleaned text with lexical and transformer results. |
-| `cleaned.parquet.gzip` | Cleaned text, tokens, stems, and document IDs (exported when invoking `TextCleaner.export_data()`). |
+| `sentiment_all_results.parquet.gzip` | Combined output uniting cleaned text with lexical, transformer and LLM scores, one row per document. |
+| `cleaned.parquet.gzip` | Original text, cleaned text, tokens, stems, and document IDs. Written on every pipeline run, and by `TextCleaner.export_data()`. |
 
 ## Lexical Columns
 
@@ -72,10 +72,15 @@ Every column ending in `_net` is on $[-1, 1]$ with zero as neutral, so lexical a
 | `{dictionary}_sentiment_{method}` | $[0, 2]$ | 1 | Apel-Blix Grimaldi convention: the net score plus one. |
 | `{dictionary}_sentiment_{method}_net` | $[-1, 1]$ | 0 | The same score recentered on zero. |
 | `{model}_sentiment_bysentence` | $[-1, 1]$ | 0 | Net count over sentences that clear the probability cutoff. |
+| `{model}_sentiment_bysentence_mean` | $[-1, 1]$ | 0 | Direction-weighted mean of sentence probabilities (`sentence_probability_aggregation: mean`). |
 | `{model}_sentiment_byalltext` | $[-1, 1]$ | 0 | Label direction times the predicted class probability. |
 | `{model}_sentiment_posneg_net` | $[-1, 1]$ | 0 | Net count over sentences that clear the cutoff in either direction; null when none do. Cutoff mode with `output_schema: shares`. |
 | `{model}_sentiment_allsentences_net` | $[-1, 1]$ | 0 | Net count over every segmented sentence. Cutoff mode with `output_schema: shares`. |
 | `{model}_net_sentiment` | $[-1, 1]$ | 0 | Positive share minus negative share; needs `output_schema: shares`. |
+| `{llm}_sentiment_byalltext` | $[-1, 1]$ or $\{0, 1, 2\}$ | 0 or 1 | Polarity times confidence with `output_scale: continuous`; polarity mapped to 0, 1, 2 with `discrete`. |
+| `{llm}_sentiment_bysentence`, `{llm}_net_sentiment` | $[-1, 1]$ | 0 | Positive share minus negative share over sentences that clear `confidence_cutoff`. |
+
+Transformer and LLM columns are prefixed by the model's `short_name`; `{model}` and `{llm}` stand for it above. The `_net` suffix marks the scores designed to be compared across methods: lexical `posneg` and `allwords` pair with transformer `posneg` and `allsentences`, which share their numerator and differ only in the denominator.
 
 For example, a document with three positive and one negative Hubert-Labondance match has `hubert_sentiment_posneg = 1.5` and `hubert_sentiment_posneg_net = 0.5`.
 
