@@ -71,9 +71,12 @@ transformer:
       num_labels: 3
       max_length: 512
       batch_size: 8
+      # FOMC-RoBERTa predicts monetary-policy stance, not tone: LABEL_0 is dovish,
+      # LABEL_1 hawkish, LABEL_2 neutral. Hawkish maps to +1, matching the research
+      # paper configuration.
       label_mapping:
-        LABEL_0: positive
-        LABEL_1: negative
+        LABEL_0: negative
+        LABEL_1: positive
         LABEL_2: neutral
       sentiment_values:
         positive: 1
