@@ -147,6 +147,9 @@ uv run pytest
 | `test_sentiment_allwords_uses_text_column_override` | Confirms lexical `allwords` uses the active text-column override. |
 | `test_sentiment_posneg_net_recenters_on_zero` | Confirms the lexical `_net` column is the $[0, 2]$ score minus one, including zero for documents with no match. |
 | `test_stemmed_lexical_columns_keep_net_last` | Confirms stemmed dictionaries name their net column `{dictionary}_sentiment_{method}_stem_net`. |
+| `test_sentence_aggregation_posneg_and_allsentences_net` | Checks the transformer PosNeg and AllSentences net columns, including a null PosNeg when no sentence clears the cutoff. |
+| `test_mean_aggregation_omits_sentence_count_denominators` | Confirms mean-mode aggregation does not emit sentence-count denominators. |
+| `test_sentence_output_carries_sentence_number_and_text` | Confirms the sentence probability export carries sentence number and text. |
 | `test_transformer_module_imports_without_optional_dependencies` | Confirms transformer module import does not require optional dependencies. |
 | `test_transformer_postprocess_predictions_uses_explicit_label_map` | Verifies transformer label maps drive directional scores. |
 | `test_transformer_sentence_aggregation_counts_confident_labels` | Tests sentence aggregation by probability cutoff and `id_text`. |
