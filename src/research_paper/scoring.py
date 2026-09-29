@@ -16,7 +16,7 @@ import pandas as pd
 
 from auto_econ_sentiment import AutoEconSentiment
 from src.research_paper.config import PaperConfig
-from src.research_paper.corpora import SpeechCorpus, StatementCorpus
+from src.research_paper.corpus import SpeechCorpus, StatementCorpus
 
 logger = logging.getLogger(__name__)
 

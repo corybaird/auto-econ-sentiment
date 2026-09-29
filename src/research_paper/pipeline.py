@@ -7,7 +7,7 @@ from functools import cached_property
 from pathlib import Path
 
 from src.research_paper.config import PaperConfig
-from src.research_paper.corpora import SpeechCorpus, StatementCorpus
+from src.research_paper.corpus import SpeechCorpus, StatementCorpus
 from src.research_paper.econometrics import ImpulseResponse, ImpulseResponses, MacroPanel
 from src.research_paper.exhibits.figures import CleaningFigure, MethodFigures, PipelineDiagram, VarFigure
 from src.research_paper.exhibits.tables import PaperTables
