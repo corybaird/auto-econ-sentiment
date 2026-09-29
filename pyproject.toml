@@ -1,6 +1,6 @@
 [project]
 name = "auto-econ-sentiment"
-version = "1.0.0"
+version = "1.0.1"
 description = "Reproducible sentiment pipeline for central bank and economic text, with lexical dictionaries and optional transformer and LLM scoring."
 readme = "README.md"
 license = { file = "LICENSE" }

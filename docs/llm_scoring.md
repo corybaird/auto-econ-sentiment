@@ -53,7 +53,7 @@ Rather than requesting a single opaque score from the model, `SentimentLLM` prom
 score = polarity * confidence        (e.g., -1 * 0.9 = -0.9)
 ```
 
-- **`polarity`**: Direction in `{-1, 0, 1}` (where `-1` is negative/dovish, `0` is neutral, and `1` is positive/hawkish). Hawkish is +1 across the package, matching the FOMC-RoBERTa and WCB stance mappings in `params.yaml`. The default prompt is recorded as `prompt_version` `v2`; the earlier `v1` prompt on `dev` scored hawkish as -1.
+- **`polarity`**: Direction in `{-1, 0, 1}` (where `-1` is negative/dovish, `0` is neutral, and `1` is positive/hawkish). Hawkish is +1 across the package, matching the FOMC-RoBERTa and WCB stance mappings in `params.yaml`. The default prompt is recorded as `prompt_version` `v2`; the `v1` prompt in the 1.0.0 package scored hawkish as -1.
 - **`confidence`**: Certainty float in `[0.0, 1.0]`.
 
 This mirrors the probability $\times$ direction calculation used in `SentimentTransformers`, allowing LLM outputs to produce harmonized columns (`{short}_count_*`, `{short}_share_*`, `{short}_net_sentiment`) directly comparable with transformer and lexical scores.
