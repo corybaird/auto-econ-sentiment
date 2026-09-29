@@ -12,11 +12,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from auto_econ_sentiment import SentimentLexical, TextCleaner
 from src.research_paper.config import PaperConfig
 from src.research_paper.econometrics import ImpulseResponse
 from src.research_paper.measures import CROSS, LEXICAL, TRANSFORMER, SentimentMeasures
 from src.research_paper.scoring import ScoredDocuments
+from src.research_paper.sentence_audit import SentenceAudit
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +28,8 @@ class PaperStatistics:
 
     def __init__(self, config: PaperConfig, statements: ScoredDocuments, responses: dict[str, ImpulseResponse]) -> None:
         self.config = config
+        self.statements = statements
         self.documents = statements.documents
-        self.sentences = statements.sentences
         self.responses = responses
         self.model_labels = config.model_labels()
         self.lexical = config["measures"]["lexical"]
@@ -42,7 +42,7 @@ class PaperStatistics:
             "Levels since 2006, monthly means weighting banks equally (Figure 5)": self.time_series_levels(),
             "Correlation family averages (Figure 4)": self.correlation_summary(),
             "VAR impulse responses (Section 3.3)": self.var_summary(),
-            "Sentence audit (Table 3)": SentenceAudit(self.config, self.documents, self.sentences).table(),
+            "Sentence audit (Table 3)": SentenceAudit(self.config, self.statements).markdown_table(),
         }
         return [self._write(sections)]
 
@@ -126,55 +126,6 @@ class PaperStatistics:
         path.write_text(f"{header}\n{body}", encoding="utf-8")
         logger.info("Wrote %s", path)
         return path
-
-
-class SentenceAudit:
-    """Table 3: one statement sentence by sentence, dictionary matches next to classifier output."""
-
-    def __init__(self, config: PaperConfig, documents: pd.DataFrame, sentences: pd.DataFrame) -> None:
-        audit = config["exhibits"]["sentence_audit"]
-        self.config = config
-        self.cutoff = config["transformer"]["sentence_probability_cutoff"]
-        self.models = {model["short_name"]: model for model in config["transformer"]["models"]}
-        document = documents[(documents["Country"] == audit["country"]) & (pd.to_datetime(documents["date"]) == pd.Timestamp(audit["date"]))]
-        if len(document) != 1:
-            raise ValueError(f"Expected one {audit['country']} statement on {audit['date']}, found {len(document)}.")
-        self.document = document.iloc[0]
-        self.sentences = sentences[(sentences["Country"] == audit["country"]) & (sentences["id_text"] == self.document["id_text"])]
-
-    def table(self) -> pd.DataFrame:
-        rows = self._dictionary_matches(self.sentences["sentence_text"])
-        for short, model in self.models.items():
-            rows[model["label"]] = [self._classification(sentence, short, model["label_map"]) for _, sentence in self.sentences.iterrows()]
-        rows.insert(0, "Sentence", self.sentences["sentence_text"].str.slice(0, 90).to_numpy())
-        rows.insert(0, "#", self.sentences["sentence_number"].to_numpy())
-        total = {"#": "", "Sentence": f"Document All-Sentences score ({len(rows)} sentences)", "Dictionary matches": ""}
-        total.update({model["label"]: f"{self.document[f'{short}_sentiment_allsentences_net']:.3f}" for short, model in self.models.items()})
-        return pd.concat([rows, pd.DataFrame([total])], ignore_index=True)
-
-    def _classification(self, sentence: pd.Series, short: str, label_map: dict) -> str:
-        """The class that clears the cutoff with its probability, or ``none``."""
-        probabilities = {label: sentence[f"{short}_{label}"] for label in label_map}
-        label, probability = max(probabilities.items(), key=lambda item: item[1])
-        if probability < self.cutoff:
-            return "none"
-        return f"{label} ({label_map[label]:+d}, {probability:.2f})"
-
-    def _dictionary_matches(self, texts: pd.Series) -> pd.DataFrame:
-        """Matched positive and negative words per sentence for every dictionary."""
-        clean_config = {**self.config["clean"], "tokenize": True, "stem": True}
-        cleaned = TextCleaner(df=pd.DataFrame({"text": texts.to_numpy()}), text_column="text", clean_config=clean_config).run()
-        scorer = SentimentLexical(df_input=cleaned)
-        dictionaries = self.config["lexical"]["dictionaries"]
-        matches = [[] for _ in range(len(cleaned))]
-        for kind, text_column in (("unstemmed", "text_tokens_str"), ("stemmed", "text_stems")):
-            for dictionary in dictionaries[kind]:
-                result = scorer.sentiment_pipeline(dictionary, "posneg", text_column=text_column)
-                for i, (positive, negative) in enumerate(zip(result[f"{dictionary}_words_positive_posneg"], result[f"{dictionary}_words_negative_posneg"])):
-                    words = [f"+{word}" for word in positive] + [f"-{word}" for word in negative]
-                    if words:
-                        matches[i].append(f"{dictionary}: {' '.join(words)}")
-        return pd.DataFrame({"Dictionary matches": ["; ".join(found) or "none" for found in matches]})
 
 
 def _percent(flags: pd.Series) -> float:
