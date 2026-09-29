@@ -189,3 +189,17 @@ exhibits:
   sentence_audit:                             # Table 3
     country: US
     date: "2020-03-03"
+    rows: [1, 2, 3, 4, 5]                     # sentences shown; the notes describe the rest
+    # Editorial shortening of long sentences. Every fragment between \ldots must occur
+    # in the scored sentence (ignoring spaces), which the table checks before writing.
+    abridged:
+      1: "The fundamentals of the U.S. economy remain strong."
+      3: "In light of these risks \\ldots\\ decided today to lower the target range for the federal funds rate \\ldots"
+      5: "The Committee is closely monitoring developments \\ldots\\ act as appropriate to support the economy."
+    dictionary_abbreviations: {correa: Correa, hubert: HL, lm: LM, hiv: GI, bn: BN, ap: ABG}
+    model_columns: {cbroberta: CB-RoBERTa, finbertpro: FinBERT, fomc: FOMC-RoBERTa}
+    class_names:
+      cbroberta: {positive: "$+$", negative: "$-$"}
+      finbertpro: {positive: "$+$", negative: "$-$", neutral: neutral}
+      fomc: {LABEL_0: dovish, LABEL_1: hawkish, LABEL_2: neutral}
+    column_widths: [0.2cm, 4.8cm, 3.4cm, 1.5cm, 1.4cm, 1.6cm]

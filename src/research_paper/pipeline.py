@@ -12,6 +12,7 @@ from src.research_paper.econometrics import ImpulseResponse, ImpulseResponses, M
 from src.research_paper.exhibits.figures import CleaningFigure, MethodFigures, PipelineDiagram, VarFigure
 from src.research_paper.exhibits.tables import PaperTables
 from src.research_paper.scoring import HeaderExperiment, ScoredDocuments, SpeechPanel, StatementPanel
+from src.research_paper.sentence_audit import SentenceAudit
 from src.research_paper.statistics import PaperStatistics
 
 logger = logging.getLogger(__name__)
@@ -65,7 +66,8 @@ class PaperPipeline:
     def _stage_tables(self) -> list[Path]:
         statements = StatementCorpus(self.config).archive()
         speeches = SpeechCorpus(self.config).archive()
-        return PaperTables(self.config, statements, speeches).run()
+        audit = SentenceAudit(self.config, self.statements)
+        return PaperTables(self.config, statements, speeches, audit).run()
 
     def _stage_statistics(self) -> list[Path]:
         return PaperStatistics(self.config, self.statements, self.impulse_responses).run()
