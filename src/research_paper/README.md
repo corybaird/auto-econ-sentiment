@@ -48,17 +48,33 @@ rebuilds the exhibits in a few minutes. `--force` rescores everything.
 
 ## Code
 
-| Module | Responsibility |
-| --- | --- |
-| `paper_configuration.yaml` | Every setting: corpora, scoring, measures, figures, VAR, exhibits |
-| `config.py` | `PaperConfig`: section access, path resolution, the package's transformer settings |
-| `corpora.py` | `StatementCorpus`, `SpeechCorpus`: reading the raw text |
-| `scoring.py` | `PackageScorer` runs the package; `StatementPanel` and `SpeechPanel` cache it per bank and per year; `HeaderExperiment` for Figure 2 |
-| `measures.py` | `SentimentMeasures`: the compared columns, monthly series and correlations |
-| `econometrics.py` | `FredMacro`, `MacroPanel`, `ImpulseResponses` |
-| `exhibits/` | `FigureStyle`, the figure classes and `PaperTables` |
-| `sentence_audit.py` | `SentenceAudit`: the Table 3 statement, sentence by sentence |
-| `statistics.py` | `PaperStatistics` |
-| `pipeline.py` | `PaperPipeline`: the stages above |
+Folders follow the order the pipeline runs in; each one's `__init__.py` exports its public classes.
+
+```text
+src/research_paper/
+├── __main__.py              python -m src.research_paper
+├── pipeline.py              PaperPipeline: the stages above
+├── config.py                PaperConfig: section access, paths, the package's transformer settings
+├── paper_configuration.yaml every setting the paper uses
+├── corpus/                  reading the raw text
+│   ├── statements.py        StatementCorpus
+│   └── speeches.py          SpeechCorpus
+├── scoring/                 running auto-econ-sentiment
+│   ├── package_scorer.py    PackageScorer, ScoredDocuments
+│   ├── panels.py            StatementPanel, SpeechPanel (cached per bank and per year)
+│   └── header_experiment.py HeaderExperiment (Figure 2)
+├── econometrics/            the VAR case study
+│   ├── macro.py             FredMacro, MacroPanel
+│   └── var.py               ImpulseResponses
+├── analysis/                what the scores show
+│   ├── measures.py          SentimentMeasures: compared columns, monthly series, correlations
+│   ├── statistics.py        PaperStatistics: every number the text quotes
+│   └── sentence_audit.py    SentenceAudit: the Table 3 statement, sentence by sentence
+└── exhibits/                what goes into main.tex
+    ├── style.py             FigureStyle
+    ├── figures/             workflow_diagram.py (1), header_contamination.py (2),
+    │                        method_comparison.py (3-6), impulse_responses.py (7)
+    └── tables/              paper_tables.py (corpus summary, 1-3), sentence_audit_table.py, latex.py
+```
 
 All scoring goes through `PackageScorer`, which calls `AutoEconSentiment.run` exactly as a user of the package would; the paper code adds no scoring logic of its own.
