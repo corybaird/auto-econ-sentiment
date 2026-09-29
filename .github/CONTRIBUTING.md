@@ -19,10 +19,9 @@ Tests that call a live LLM provider are marked `llm` and skipped by default. CI 
 
 ## Branches
 
-- `main` holds released versions only.
-- `dev` is the integration branch. Branch from it and open pull requests against it.
+- Branch from `main` and open pull requests against it. `main` should always pass the tests.
 - Name branches by type: `feat/...` for features, `fix/...` for bug fixes, `docs/...` for documentation.
-- Releases go from `dev` to `main` through a `release/vX.Y.Z` branch; see [docs/roadmap.md](../docs/roadmap.md) for the tagging and publishing steps.
+- A release is one pull request, `release/vX.Y.Z`, that bumps the version and dates the changelog. Publishing happens only when the tag is pushed; see [docs/roadmap.md](../docs/roadmap.md) for the steps.
 
 ## Commits
 
