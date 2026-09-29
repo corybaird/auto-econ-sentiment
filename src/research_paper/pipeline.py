@@ -6,14 +6,13 @@ import logging
 from functools import cached_property
 from pathlib import Path
 
+from src.research_paper.analysis import PaperStatistics, SentenceAudit
 from src.research_paper.config import PaperConfig
 from src.research_paper.corpus import SpeechCorpus, StatementCorpus
 from src.research_paper.econometrics import ImpulseResponse, ImpulseResponses, MacroPanel
-from src.research_paper.exhibits.figures import CleaningFigure, MethodFigures, PipelineDiagram, VarFigure
+from src.research_paper.exhibits.figures import HeaderContaminationFigure, ImpulseResponseFigure, MethodComparisonFigures, WorkflowDiagram
 from src.research_paper.exhibits.tables import PaperTables
 from src.research_paper.scoring import HeaderExperiment, ScoredDocuments, SpeechPanel, StatementPanel
-from src.research_paper.analysis.sentence_audit import SentenceAudit
-from src.research_paper.analysis.statistics import PaperStatistics
 
 logger = logging.getLogger(__name__)
 
@@ -55,13 +54,13 @@ class PaperPipeline:
     def _stage_figures(self) -> list[Path]:
         clean, contaminated = HeaderExperiment(self.config, self.force).run()
         return [
-            *PipelineDiagram(self.config).run(),
-            *CleaningFigure(self.config, clean, contaminated).run(),
-            *MethodFigures(self.config, self.statements.documents).run(),
+            *WorkflowDiagram(self.config).run(),
+            *HeaderContaminationFigure(self.config, clean, contaminated).run(),
+            *MethodComparisonFigures(self.config, self.statements.documents).run(),
         ]
 
     def _stage_var(self) -> list[Path]:
-        return VarFigure(self.config, self.impulse_responses).run()
+        return ImpulseResponseFigure(self.config, self.impulse_responses).run()
 
     def _stage_tables(self) -> list[Path]:
         statements = StatementCorpus(self.config).archive()
