@@ -30,8 +30,8 @@ FOMC-RoBERTa (`gtfintechlab/FOMC-RoBERTa`) is a gated model on Hugging Face. Req
 | `speeches` | The same scores for every US speech | the speech corpus |
 | `figures` | Figures 1 to 6 | statement scores, FOMC sample |
 | `var` | Figure 7 | speech scores, FRED |
-| `tables` | Corpus summary and Tables 1 and 2 | both raw corpora |
-| `statistics` | `reports/paper_statistics.md`: every number quoted in the text, and the Table 3 sentence audit | statement scores, the VAR |
+| `tables` | Corpus summary and Tables 1 to 3 | both raw corpora, statement scores |
+| `statistics` | `reports/paper_statistics.md`: every number quoted in the text, and the full sentence audit behind Table 3 | statement scores, the VAR |
 
 The scoring stages reuse cached units; the later stages only read the cached panels, so after one full run
 
@@ -57,7 +57,8 @@ rebuilds the exhibits in a few minutes. `--force` rescores everything.
 | `measures.py` | `SentimentMeasures`: the compared columns, monthly series and correlations |
 | `econometrics.py` | `FredMacro`, `MacroPanel`, `ImpulseResponses` |
 | `exhibits/` | `FigureStyle`, the figure classes and `PaperTables` |
-| `statistics.py` | `PaperStatistics` and `SentenceAudit` |
+| `sentence_audit.py` | `SentenceAudit`: the Table 3 statement, sentence by sentence |
+| `statistics.py` | `PaperStatistics` |
 | `pipeline.py` | `PaperPipeline`: the stages above |
 
 All scoring goes through `PackageScorer`, which calls `AutoEconSentiment.run` exactly as a user of the package would; the paper code adds no scoring logic of its own.
