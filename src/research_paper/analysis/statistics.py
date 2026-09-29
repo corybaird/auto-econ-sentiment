@@ -14,9 +14,9 @@ import pandas as pd
 
 from src.research_paper.config import PaperConfig
 from src.research_paper.econometrics import ImpulseResponse
-from src.research_paper.measures import CROSS, LEXICAL, TRANSFORMER, SentimentMeasures
+from src.research_paper.analysis.measures import CROSS, LEXICAL, TRANSFORMER, SentimentMeasures
 from src.research_paper.scoring import ScoredDocuments
-from src.research_paper.sentence_audit import SentenceAudit
+from src.research_paper.analysis.sentence_audit import SentenceAudit
 
 logger = logging.getLogger(__name__)
 

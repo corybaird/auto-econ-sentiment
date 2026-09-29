@@ -12,8 +12,8 @@ from src.research_paper.econometrics import ImpulseResponse, ImpulseResponses, M
 from src.research_paper.exhibits.figures import CleaningFigure, MethodFigures, PipelineDiagram, VarFigure
 from src.research_paper.exhibits.tables import PaperTables
 from src.research_paper.scoring import HeaderExperiment, ScoredDocuments, SpeechPanel, StatementPanel
-from src.research_paper.sentence_audit import SentenceAudit
-from src.research_paper.statistics import PaperStatistics
+from src.research_paper.analysis.sentence_audit import SentenceAudit
+from src.research_paper.analysis.statistics import PaperStatistics
 
 logger = logging.getLogger(__name__)
 

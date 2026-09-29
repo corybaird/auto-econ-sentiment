@@ -11,7 +11,7 @@ import pandas as pd
 import yaml
 
 from src.research_paper.config import PaperConfig
-from src.research_paper.sentence_audit import AuditSentence, SentenceAudit
+from src.research_paper.analysis.sentence_audit import AuditSentence, SentenceAudit
 
 logger = logging.getLogger(__name__)
 

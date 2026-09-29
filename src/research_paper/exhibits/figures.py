@@ -13,7 +13,7 @@ from matplotlib.patches import FancyBboxPatch
 from src.research_paper.config import PaperConfig
 from src.research_paper.econometrics import ImpulseResponse
 from src.research_paper.exhibits.style import FigureStyle
-from src.research_paper.measures import LEXICAL, TRANSFORMER, SentimentMeasures
+from src.research_paper.analysis.measures import LEXICAL, TRANSFORMER, SentimentMeasures
 
 FAMILIES = (LEXICAL, TRANSFORMER)
 
