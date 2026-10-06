@@ -91,7 +91,7 @@ Scoring adds the following columns to output tables:
 Used for local inference without API fees or external network calls:
 
 - **Default Endpoint**: `http://localhost:11434/api/generate`
-- **Host Override**: Read from `.env`'s `API_OLLAMA` variable or specified via `base_url`.
+- **Host Override**: Set `base_url` to use a remote host.
 - **Payload**: JSON request specifying `model`, `prompt`, `stream: false`, and `temperature`.
 
 ```yaml
@@ -105,9 +105,11 @@ llm:
 
 ### 2. OpenAI-Compatible APIs (OpenAI, OpenRouter, Together, Groq, vLLM)
 
-Any endpoint following the OpenAI `/v1/chat/completions` specification is supported by configuring `provider: openai`, `base_url`, and `api_key_env`.
+Any endpoint following the OpenAI `/v1/chat/completions` specification is supported by configuring `provider: openai`, `base_url`, and `api_key_env`. With no `api_key_env`, the key is read from `OPENAI_API_KEY`. Keys can live in a `.env` file in the working directory, which is read when a key is needed; variables already set in the shell take precedence. Copy [.env.example](../.env.example) to `.env` to start.
 
 #### OpenRouter Example
+
+OpenRouter exposes an OpenAI-compatible API, so it needs no special provider: set `provider: openai`, point `base_url` at it and name the environment variable holding your key in `api_key_env`.
 
 ```yaml
 llm:
