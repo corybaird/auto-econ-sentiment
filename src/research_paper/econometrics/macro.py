@@ -7,6 +7,7 @@ import os
 
 import numpy as np
 import pandas as pd
+from dotenv import load_dotenv
 
 from src.research_paper.config import PROJECT_ROOT, PaperConfig
 
@@ -70,15 +71,11 @@ class MacroPanel:
 
 
 def _fred_api_key() -> str:
-    """The FRED key from FRED_API_KEY or API_FRED, in the environment or a local .env file."""
+    """The FRED key from FRED_API_KEY or API_FRED, in the environment or the project .env file."""
+    env_path = PROJECT_ROOT / ".env"
+    load_dotenv(env_path, override=False)
     names = ("FRED_API_KEY", "API_FRED")
     for name in names:
         if os.environ.get(name):
             return os.environ[name].strip()
-    env_path = PROJECT_ROOT / ".env"
-    if env_path.exists():
-        for line in env_path.read_text().splitlines():
-            name, separator, value = line.partition("=")
-            if separator and name.strip() in names:
-                return value.strip().strip("'\"")
-    raise RuntimeError(f"No FRED API key in {' or '.join(names)}, or in {env_path}.")
+    raise RuntimeError(f"No FRED API key in {' or '.join(names)}, in the environment or {env_path}.")
