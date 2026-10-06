@@ -1,6 +1,6 @@
 # Replicating the Paper
 
-This folder rebuilds every figure, table and statistic in *AutoEconSentiment: Reproducible Infrastructure for Sentiment Analysis* from raw text, using the released `auto-econ-sentiment` package (v1.0.1).
+This folder rebuilds every figure, table and statistic in *AutoEconSentiment: Reproducible Infrastructure for Sentiment Analysis* from raw text, using the released `auto-econ-sentiment` package. The paper's results were produced with v1.0.1; v1.0.2 changes only how API keys are read, and reproduces them exactly.
 
 ```bash
 uv sync --extra transformers --extra research
