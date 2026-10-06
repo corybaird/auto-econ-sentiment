@@ -8,6 +8,7 @@ from typing import Any, Optional, Union
 
 import numpy as np
 import pandas as pd
+from dotenv import find_dotenv, load_dotenv
 from tqdm import tqdm
 
 from auto_econ_sentiment.models.sentiment_base import SentimentBase
@@ -113,6 +114,8 @@ class SentimentLLM(SentimentBase):
         return "https://api.openai.com/v1"
 
     def _get_openai_api_key(self) -> str:
+        # Keys may live in a .env file in the working directory; variables already set win.
+        load_dotenv(find_dotenv(usecwd=True), override=False)
         if self.api_key_env:
             key = os.environ.get(self.api_key_env, "")
             if not key:
