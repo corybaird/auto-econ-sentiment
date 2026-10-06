@@ -84,6 +84,22 @@ Transformer and LLM columns are prefixed by the model's `short_name`; `{model}` 
 
 For example, a document with three positive and one negative Hubert-Labondance match has `hubert_sentiment_posneg = 1.5` and `hubert_sentiment_posneg_net = 0.5`.
 
+### Paper Notation
+
+The accompanying paper names the aggregations rather than the columns. Each maps to one column:
+
+| Paper | Formula | Column |
+|---|---|---|
+| Lexical `PosNeg` | $(P - N) / (P + N)$ | `{dictionary}_sentiment_posneg_net` (`_posneg_stem_net` for stemmed dictionaries) |
+| Lexical `All-Words` | $(P - N) / T$ | `{dictionary}_sentiment_allwords_net` |
+| Transformer `PosNeg` | $(N^{+} - N^{-}) / (N^{+} + N^{-})$ | `{model}_sentiment_posneg_net` |
+| Transformer `All-Sentences` | $(N^{+} - N^{-}) / S$ | `{model}_sentiment_allsentences_net` |
+| Net share over classified sentences | $(N^{+} - N^{-}) / (N^{+} + N^{0} + N^{-})$ | `{model}_net_sentiment` |
+
+$P$ and $N$ count positive and negative dictionary matches, $T$ the tokens left after English stop words are removed, $N^{c}$ the sentences whose class $c$ clears `sentence_probability_cutoff`, and $S$ every segmented sentence.
+
+`{model}_sentiment_posneg_net` is missing when no sentence is classified positive or negative. When no sentence clears the cutoff at all, `{model}_net_sentiment` and `{model}_sentiment_bysentence` are 0 rather than missing. Filter on `{model}_count_positive + {model}_count_neutral + {model}_count_negative > 0` to treat those documents as unmeasured.
+
 ## Transformer Columns
 
 Transformer columns are prefixed by `model_name_short`, for example:
