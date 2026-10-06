@@ -387,6 +387,9 @@ notebooks = [
     { name = "jupyter" },
 ]
 research = [
+    { name = "fredapi" },
+    { name = "matplotlib" },
+    { name = "seaborn" },
     { name = "statsmodels" },
 ]
 transformers = [
@@ -408,10 +411,12 @@ viz = [
 requires-dist = [
     { name = "dataframe-image", marker = "extra == 'viz'", specifier = ">=0.2.6,<1" },
     { name = "fredapi", marker = "extra == 'notebooks'", specifier = ">=0.5.2" },
+    { name = "fredapi", marker = "extra == 'research'", specifier = ">=0.5.2" },
     { name = "gradio", marker = "extra == 'viz'", specifier = ">=5.29.0,<6" },
     { name = "httpx", marker = "extra == 'llm'", specifier = ">=0.27.0,<1" },
     { name = "jupyter", marker = "extra == 'notebooks'", specifier = ">=1.1.1" },
     { name = "matplotlib", specifier = ">=3.10.8,<4" },
+    { name = "matplotlib", marker = "extra == 'research'", specifier = ">=3.0,<4" },
     { name = "matplotlib", marker = "extra == 'viz'", specifier = ">=3.0,<4" },
     { name = "nltk", specifier = ">=3.9.1,<4" },
     { name = "pandas", specifier = ">=2.2.3,<3" },
@@ -424,6 +429,7 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4.0" },
     { name = "scikit-learn", specifier = ">=1.5.2,<2" },
     { name = "seaborn", specifier = ">=0.13.2,<1" },
+    { name = "seaborn", marker = "extra == 'research'", specifier = ">=0.13.2,<1" },
     { name = "seaborn", marker = "extra == 'viz'", specifier = ">=0.13.2,<1" },
     { name = "statsmodels", marker = "extra == 'research'", specifier = ">=0.14.0,<1" },
     { name = "torch", marker = "extra == 'transformers'", specifier = ">=2.0,<3" },

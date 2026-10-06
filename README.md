@@ -43,6 +43,9 @@
   - release and tagging steps
 - [Transformer notebook](notebooks/autoecon_transformers.ipynb)
   - walkthrough of transformer scoring
+- [Paper replication](src/research_paper/README.md)
+  - rebuilds every figure, table and statistic in the paper
+  - inputs, stages, outputs
 
 
 
@@ -91,6 +94,8 @@ analyzer.run(
 ## Transformer Quick Start
 
 Transformer support is optional so lexical users do not need to install `torch` or download Hugging Face models.
+
+FOMC-RoBERTa (`gtfintechlab/FOMC-RoBERTa`) is gated on Hugging Face: request access on its model page and run `hf auth login` before the first run. The other example models download without an account.
 
 ```bash
 uv sync --extra transformers
