@@ -39,7 +39,7 @@
   - Ollama and OpenAI-compatible providers
   - polarity x confidence, prompts, output columns
 - [Roadmap](docs/roadmap.md)
-  - v1.0.1 scope, planned features
+  - v1.0.2 scope, planned features
   - release and tagging steps
 - [Transformer notebook](notebooks/autoecon_transformers.ipynb)
   - walkthrough of transformer scoring

@@ -10,8 +10,8 @@ abstract: >-
 authors:
   - family-names: Baird
     given-names: Cory
-version: 1.0.1
-date-released: "2026-09-28"
+version: 1.0.2
+date-released: "2026-10-06"
 license: MIT
 repository-code: "https://github.com/corybaird/auto-econ-sentiment"
 url: "https://github.com/corybaird/auto-econ-sentiment"

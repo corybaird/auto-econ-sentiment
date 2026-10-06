@@ -8,6 +8,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-10-06
+
 ### Added
 - Added `python-dotenv` so API keys for OpenAI-compatible providers can be read from a `.env` file in the working directory; variables already set in the shell take precedence. `.env.example` lists the keys.
 
