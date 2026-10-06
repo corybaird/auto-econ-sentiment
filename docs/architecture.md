@@ -90,9 +90,9 @@ Each document is assigned a unique `id_text` to maintain alignment, and the clea
 
 ### 3.5 `models/sentiment_lexical.py` (Lexical Sentiment Model)
 Computes bag-of-words sentiment against multiple central bank and financial dictionaries. Employs user-selected aggregation methods:
-*   **`posneg`**: Normalizes sentiment by the total count of matched sentiment words. 
+*   **`posneg`**: Normalizes sentiment by the total count of matched sentiment words. A document with no matches gets the neutral value.
     $$ \text{Sentiment}_{\text{posneg}} = 1 + \frac{N_{\text{pos}} - N_{\text{neg}}}{N_{\text{pos}} + N_{\text{neg}}} $$
-*   **`allwords`**: Normalizes sentiment by the total number of tokens in the entire document.
+*   **`allwords`**: Normalizes sentiment by the total number of tokens in the document, counted after English stop words are removed.
     $$ \text{Sentiment}_{\text{allwords}} = 1 + \frac{N_{\text{pos}} - N_{\text{neg}}}{N_{\text{total}}} $$
 
 Both scores keep the Apel-Blix Grimaldi $+1$ convention on $[0, 2]$. Each is paired with a `_net` column that subtracts the one, putting it on $[-1, 1]$ with zero as neutral, the scale transformer scores use. See the score-scale table in [data.md](data.md).
@@ -120,7 +120,7 @@ The transformer path treats labels as model-specific. Generic model labels such 
 `SentimentBase` is the shared base class for sentiment models, providing input DataFrame handling, the `text_column` interface and CSV export.
 
 ### 3.9 `data/lexical_master_dict.yaml` (Dictionary Definitions)
-Master YAML file containing the positive/negative word lists for all 6 supported dictionaries: `hubert`, `lm`, `hiv`, `correa`, `bn`, `ap`. `bn` and `ap` are stemmed dictionaries and are matched against `text_stems`; the others are matched against `text_tokens_str`.
+Master YAML file in `src/auto_econ_sentiment/data/` containing the positive/negative word lists for all 6 supported dictionaries: `hubert`, `lm`, `hiv`, `correa`, `bn`, `ap`. `bn` and `ap` are stemmed dictionaries and are matched against `text_stems`; the others are matched against `text_tokens_str`.
 
 ### 3.10 `exceptions.py` (Custom Exceptions)
 Defines structured error classes throughout the pipeline:

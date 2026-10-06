@@ -54,14 +54,14 @@ Lexical columns follow this pattern:
 ```text
 {dictionary}_counttoken_positive_{method}
 {dictionary}_counttoken_negative_{method}
-{dictionary}_counttoken_total_{method}
+{dictionary}_counttoken_total_{method}      # allwords only
 {dictionary}_words_positive_{method}
 {dictionary}_words_negative_{method}
 {dictionary}_sentiment_{method}
 {dictionary}_sentiment_{method}_net
 ```
 
-Dictionaries matched against stemmed text (`stemmed` in `params.yaml`) insert `_stem` before the net suffix, for example `bn_sentiment_posneg_stem` and `bn_sentiment_posneg_stem_net`.
+Dictionaries matched against stemmed text (`stemmed` in `params.yaml`) append `_stem` to the method, so every column carries it, for example `bn_counttoken_positive_posneg_stem`, `bn_sentiment_posneg_stem` and `bn_sentiment_posneg_stem_net`. The `allwords` token total excludes English stop words.
 
 ## Score Scales
 
@@ -122,6 +122,9 @@ llama3_sentiment_bysentence
 llama3_count_positive
 llama3_count_neutral
 llama3_count_negative
+llama3_countsentence_positive   # same counts as count_*, kept for parity with transformers
+llama3_countsentence_neutral
+llama3_countsentence_negative
 llama3_share_positive
 llama3_share_neutral
 llama3_share_negative
