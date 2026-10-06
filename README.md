@@ -43,6 +43,9 @@
   - release and tagging steps
 - [Transformer notebook](notebooks/autoecon_transformers.ipynb)
   - walkthrough of transformer scoring
+- [Paper replication](src/research_paper/README.md)
+  - rebuilds every figure, table and statistic in the paper
+  - inputs, stages, outputs
 
 
 

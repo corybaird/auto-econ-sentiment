@@ -8,6 +8,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ## [Unreleased]
 
+### Added
+- Added `src/research_paper/`, which rebuilds every figure, table and statistic in the accompanying paper from raw text. It sits outside the package and is not shipped to PyPI; `uv sync --extra research` installs its dependencies.
+
 ## [1.0.2] - 2026-10-06
 
 ### Added
