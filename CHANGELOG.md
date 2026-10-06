@@ -6,6 +6,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ---
 
+## [Unreleased]
+
+### Added
+- Added `python-dotenv` so API keys for OpenAI-compatible providers can be read from a `.env` file in the working directory; variables already set in the shell take precedence. `.env.example` lists the keys.
+
+### Removed
+- Removed the `API_OLLAMA` environment variable. Set `base_url` to point Ollama at a remote host.
+
 ## [1.0.1] - 2026-09-28
 
 The v1.0.0 tag was cut before these two changes reached `main`, so the 1.0.0 package on PyPI does not include them.

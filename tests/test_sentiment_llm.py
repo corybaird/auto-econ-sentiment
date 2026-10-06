@@ -294,6 +294,34 @@ def test_openrouter_request_builder():
     assert payload["model"] == "anthropic/claude-3.5-sonnet"
 
 
+def test_api_key_read_from_dotenv_file(tmp_path, monkeypatch):
+    (tmp_path / ".env").write_text("OPENROUTER_API_KEY=sk-or-from-dotenv\n")
+    monkeypatch.chdir(tmp_path)
+    # load_dotenv writes to os.environ, so restore it afterwards.
+    with mock.patch.dict(os.environ, clear=False):
+        os.environ.pop("OPENROUTER_API_KEY", None)
+        scorer = _mock_llm_scorer(provider="openai", api_key_env="OPENROUTER_API_KEY")
+
+        assert scorer._get_openai_api_key() == "sk-or-from-dotenv"
+
+
+def test_shell_api_key_takes_precedence_over_dotenv(tmp_path, monkeypatch):
+    (tmp_path / ".env").write_text("OPENROUTER_API_KEY=sk-or-from-dotenv\n")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-from-shell")
+    scorer = _mock_llm_scorer(provider="openai", api_key_env="OPENROUTER_API_KEY")
+
+    assert scorer._get_openai_api_key() == "sk-or-from-shell"
+
+
+def test_ollama_defaults_to_localhost(monkeypatch):
+    monkeypatch.setenv("API_OLLAMA", "http://remote-ollama:11434")
+    scorer = _mock_llm_scorer(provider="ollama")
+    url, _, _ = scorer._build_ollama_request("Test prompt")
+
+    assert url == "http://localhost:11434/api/generate"
+
+
 def test_sentiment_bysentence_aggregation():
     scorer = _mock_llm_scorer(output_scale="continuous")
     scorer.df_labels = pd.DataFrame(
