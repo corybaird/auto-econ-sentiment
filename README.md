@@ -3,7 +3,48 @@
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-`auto-econ-sentiment` is a reproducible pipeline for measuring economic sentiment in central bank and financial text. The core package is lexical-first: it cleans text, scores it with established economic dictionaries, and exports comparable sentiment outputs. Transformer and LLM sentiment are available as optional extensions.
+`auto-econ-sentiment` is a reproducible pipeline for measuring economic sentiment in central bank and financial text.
+
+## What It Does
+
+- **Load:** CSV, Excel, Parquet or a directory of `.txt` and Markdown files, with dates parsed from filenames
+- **Clean:** normalize economic text, tokenize, stem, split into sentences or paragraphs
+- **Score:** six central bank and financial dictionaries, plus optional transformer and LLM scoring with explicit label mappings
+- **Compare:** every `_net` column lies in $[-1, 1]$ with zero as neutral, so methods share one scale
+- **Export:** cleaned text, matched words, counts, probabilities and sentiment scores
+- **Audit:** dictionary and model disagreement stays visible for research workflows
+
+## Table of Contents
+
+- [What It Does](#what-it-does)
+- [Documentation](#documentation)
+- [Quick Start](#quick-start)
+- [Transformer Quick Start](#transformer-quick-start)
+- [LLM Quick Start](#llm-quick-start)
+- [CBS Speeches Demo](#cbs-speeches-demo)
+- [Citations](#citations)
+
+## Documentation
+
+- [Architecture](docs/architecture.md)
+  - pipeline stages and components
+  - config-driven design, tests, directory tree
+- [Data and Outputs](docs/data.md)
+  - input formats, directory loader
+  - output files, column names, score scales
+- [Examples](docs/examples.md)
+  - YAML and Python runs
+  - segmentation, method comparison, transformer setup
+- [LLM Scoring](docs/llm_scoring.md)
+  - Ollama and OpenAI-compatible providers
+  - polarity x confidence, prompts, output columns
+- [Roadmap](docs/roadmap.md)
+  - v1.0.1 scope, planned features
+  - release and tagging steps
+- [Transformer notebook](notebooks/autoecon_transformers.ipynb)
+  - walkthrough of transformer scoring
+
+
 
 ## Quick Start
 
@@ -92,25 +133,6 @@ uv sync --extra llm
 ```
 
 Set `llm.enabled: true` in `params.yaml` and point it at a local Ollama model or any OpenAI-compatible API. See [LLM Scoring](docs/llm_scoring.md) for providers, prompting and output columns.
-
-## What It Does
-
-- Loads CSV, Excel or Parquet files, or a directory of `.txt` and Markdown documents with dates parsed from filenames.
-- Cleans and normalizes economic text, and splits it into sentences or paragraphs.
-- Scores text with six central bank and financial dictionaries.
-- Optionally scores text with transformer classifiers or LLMs, using explicitly configured label mappings.
-- Puts every method on a shared scale: each column ending in `_net` lies in $[-1, 1]$ with zero as neutral.
-- Exports cleaned text, matched words, counts, probabilities, and sentiment scores.
-- Makes dictionary and model disagreement visible for research workflows.
-
-## Documentation
-
-- [Architecture](docs/architecture.md)
-- [Data and Outputs](docs/data.md)
-- [Examples](docs/examples.md)
-- [LLM Scoring](docs/llm_scoring.md)
-- [Roadmap](docs/roadmap.md)
-- [Transformer notebook](notebooks/autoecon_transformers.ipynb)
 
 ## CBS Speeches Demo
 

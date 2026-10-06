@@ -4,7 +4,7 @@ This document outlines the planned future features for `auto-econ-sentiment` and
 
 Research-planning notes, paper feedback, and transformer refactor scratch docs can live locally under `docs/feedback/`. That directory is ignored by git so exploratory notes can evolve without becoming release documentation.
 
-## Current Release: `v1.0.0` (Stable Release)
+## Current Release: `v1.0.1` (Stable Release)
 `v1.0.0` is the first stable release. `v1.0.1` adds two fixes that missed the v1.0.0 tag, the custom text-column fix and the hawkish = +1 LLM prompt, and is the version the accompanying paper's results are produced with. Together they add directory input, paragraph segmentation, mean aggregation and LLM scoring, and put every scoring method on a comparable net-sentiment scale.
 
 ### Implemented Scope (`v1.0.0`)
