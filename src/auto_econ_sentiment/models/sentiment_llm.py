@@ -105,9 +105,6 @@ class SentimentLLM(SentimentBase):
     def _get_ollama_base_url(self) -> str:
         if self.base_url:
             return self.base_url.rstrip("/")
-        env_host = os.environ.get("API_OLLAMA")
-        if env_host:
-            return env_host.rstrip("/")
         return "http://localhost:11434"
 
     def _get_openai_base_url(self) -> str:

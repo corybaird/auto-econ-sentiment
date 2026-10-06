@@ -294,6 +294,14 @@ def test_openrouter_request_builder():
     assert payload["model"] == "anthropic/claude-3.5-sonnet"
 
 
+def test_ollama_defaults_to_localhost(monkeypatch):
+    monkeypatch.setenv("API_OLLAMA", "http://remote-ollama:11434")
+    scorer = _mock_llm_scorer(provider="ollama")
+    url, _, _ = scorer._build_ollama_request("Test prompt")
+
+    assert url == "http://localhost:11434/api/generate"
+
+
 def test_sentiment_bysentence_aggregation():
     scorer = _mock_llm_scorer(output_scale="continuous")
     scorer.df_labels = pd.DataFrame(
