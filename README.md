@@ -95,6 +95,8 @@ analyzer.run(
 
 Transformer support is optional so lexical users do not need to install `torch` or download Hugging Face models.
 
+FOMC-RoBERTa (`gtfintechlab/FOMC-RoBERTa`) is gated on Hugging Face: request access on its model page and run `hf auth login` before the first run. The other example models download without an account.
+
 ```bash
 uv sync --extra transformers
 ```
