@@ -16,7 +16,7 @@ from auto_econ_sentiment.models.sentiment_base import SentimentBase
 logger = logging.getLogger(__name__)
 
 # Polarity follows the package-wide sign convention: positive tone and hawkish stance
-# are +1, matching the FOMC-RoBERTa and WCB stance mappings in params.yaml.
+# are +1, matching the FOMC-RoBERTa stance mapping in params.yaml.
 DEFAULT_PROMPT_TEMPLATE = (
     "You are an economic sentiment analysis expert. Analyze the sentiment of the following economic text.\n"
     "Respond ONLY with a valid JSON object in this exact format:\n"
