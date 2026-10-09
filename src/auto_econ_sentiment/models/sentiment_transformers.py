@@ -207,11 +207,11 @@ class SentimentTransformers(SentimentBase):
             positive_count = df_score[f"{self.model_name_short}_count_positive"]
             negative_count = df_score[f"{self.model_name_short}_count_negative"]
             net_count = sign * (positive_count - negative_count)
-            # PosNeg divides by the sentences that carry sentiment, so it is undefined when
-            # a document has none and is left null rather than filled with a spurious zero.
+            # PosNeg divides by the sentences that carry sentiment. A document with none
+            # scores the neutral zero, matching the lexical PosNeg with no dictionary match.
             df_score[f"{self.model_name_short}_sentiment_posneg_net"] = (
                 net_count / (positive_count + negative_count).replace(0, np.nan)
-            )
+            ).fillna(0)
             # AllSentences divides by every segmented sentence, the counterpart of the
             # AllWords token denominator, and is defined for any non-empty document.
             df_score[f"{self.model_name_short}_sentiment_allsentences_net"] = (

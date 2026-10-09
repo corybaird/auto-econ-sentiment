@@ -72,22 +72,31 @@ transformer:
 
 # ------------------------------------------------------------------------------
 # MEASURES
-# The columns the figures compare, all on the shared [-1, 1] scale. Lexical
-# measures use PosNeg; transformer measures use All-Sentences, with the PosNeg
-# counterparts kept for the statistics that compare the two denominators.
+# The columns the figures compare, all on the shared [-1, 1] scale. Both families
+# use the same normalization: lexical All-Words divides by every token and
+# transformer All-Sentences by every sentence. The PosNeg pair, which divides by
+# matched terms or sentiment-bearing sentences only, is kept for the statistics
+# that compare the two denominators.
 # ------------------------------------------------------------------------------
 measures:
   lexical:
+    correa_sentiment_allwords_net: Correa
+    hubert_sentiment_allwords_net: Hubert-Labondance
+    lm_sentiment_allwords_net: Loughran-McDonald
+    hiv_sentiment_allwords_net: General Inquirer
+    bn_sentiment_allwords_stem_net: Bennani-Neuenkirch
+    ap_sentiment_allwords_stem_net: Apel-Blix Grimaldi
+  transformer:
+    cbroberta_sentiment_allsentences_net: CentralBankRoBERTa
+    finbertpro_sentiment_allsentences_net: FinBERT
+    fomc_sentiment_allsentences_net: FOMC-RoBERTa
+  lexical_posneg:
     correa_sentiment_posneg_net: Correa
     hubert_sentiment_posneg_net: Hubert-Labondance
     lm_sentiment_posneg_net: Loughran-McDonald
     hiv_sentiment_posneg_net: General Inquirer
     bn_sentiment_posneg_stem_net: Bennani-Neuenkirch
     ap_sentiment_posneg_stem_net: Apel-Blix Grimaldi
-  transformer:
-    cbroberta_sentiment_allsentences_net: CentralBankRoBERTa
-    finbertpro_sentiment_allsentences_net: FinBERT
-    fomc_sentiment_allsentences_net: FOMC-RoBERTa
   transformer_posneg:
     cbroberta_sentiment_posneg_net: CentralBankRoBERTa
     finbertpro_sentiment_posneg_net: FinBERT
@@ -110,6 +119,12 @@ figure:
     hiv_sentiment_posneg_net: "#8c564b"
     bn_sentiment_posneg_stem_net: "#9467bd"
     ap_sentiment_posneg_stem_net: "#7f7f7f"
+    correa_sentiment_allwords_net: "#1f77b4"
+    hubert_sentiment_allwords_net: "#ff7f0e"
+    lm_sentiment_allwords_net: "#2ca02c"
+    hiv_sentiment_allwords_net: "#8c564b"
+    bn_sentiment_allwords_stem_net: "#9467bd"
+    ap_sentiment_allwords_stem_net: "#7f7f7f"
     cbroberta_sentiment_allsentences_net: "#d62728"
     finbertpro_sentiment_allsentences_net: "#e377c2"
     fomc_sentiment_allsentences_net: "#17becf"
@@ -189,13 +204,13 @@ exhibits:
   sentence_audit:                             # Table 3
     country: US
     date: "2020-03-03"
-    rows: [1, 2, 3, 4, 5]                     # sentences shown; the notes describe the rest
+    rows: [1, 2, 3, 4]                        # sentences shown; the notes describe the rest
     # Editorial shortening of long sentences. Every fragment between \ldots must occur
     # in the scored sentence (ignoring spaces), which the table checks before writing.
     abridged:
       1: "The fundamentals of the U.S. economy remain strong."
       3: "In light of these risks \\ldots\\ decided today to lower the target range for the federal funds rate \\ldots"
-      5: "The Committee is closely monitoring developments \\ldots\\ act as appropriate to support the economy."
+      4: "The Committee is closely monitoring developments \\ldots\\ act as appropriate to support the economy."
     dictionary_abbreviations: {correa: Correa, hubert: HL, lm: LM, hiv: GI, bn: BN, ap: ABG}
     model_columns: {cbroberta: CB-RoBERTa, finbertpro: FinBERT, fomc: FOMC-RoBERTa}
     class_names:

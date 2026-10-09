@@ -160,6 +160,23 @@ def test_cleaner_percentage_normalization():
     assert "%" in cleaned or "percent" in cleaned.lower()
 
 
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("by 1/2 percentage point, to 1 to 1-1/4 percent.", "by 0.5% point, to 1 to 1.25%."),
+        ("at 5-1/4 to 5-1/2 percent.", "at 5.25 to 5.5%."),
+        ("a rate of 2.5 percent.", "a rate of 2.5%."),
+        ("the meeting on 11/20/2019.", "the meeting on 11/20/2019."),
+    ],
+)
+def test_cleaner_keeps_fractions_and_decimals_intact(text, expected):
+    cleaner = TextCleaner(
+        df=_df(text), text_column="text",
+        clean_config={"clean_numbers_percentages": True, "tokenize": False, "stem": False},
+    )
+    assert cleaner.run()["text_clean"].iloc[0] == expected
+
+
 def test_cleaner_assigns_id_text():
     df = _df(FOMC_JULY_2024, FOMC_SEPT_2024)
     cleaner = TextCleaner(df=df, text_column="text")

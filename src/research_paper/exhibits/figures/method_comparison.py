@@ -32,16 +32,35 @@ class MethodComparisonFigures:
         return [self.distributions(), self.correlations(), self.time_series(), self.country_comparison()]
 
     def distributions(self) -> Path:
-        """Figure 3: the distribution of every measure, pooled across documents."""
-        order = [self.measures.labels[column] for column in self.measures.columns]
-        fig, ax = plt.subplots(figsize=(11, 6.5))
-        sns.boxplot(data=self.measures.long_form(), x="value", y="Measure", hue="Family", order=order, palette=self.figure["family_colors"], dodge=False, fliersize=1.5, linewidth=0.9, ax=ax)
-        self.style.grid(ax, axis="x")
-        self.style.zero_line(ax, vertical=True)
-        ax.set_xlabel("Net sentiment (positive share $-$ negative share)")
-        ax.set_ylabel("")
-        ax.legend(title="", loc="lower right", frameon=True)
-        ax.set_title(f"Distribution of net sentiment by method, pooled across {self.n_banks} central banks")
+        """Figure 3: every measure's pooled distribution, one row per family and one column per normalization.
+
+        All-Words values are an order of magnitude smaller than All-Sentences values, so the
+        length-normalized column gives each family its own x-axis. The PosNeg column shares
+        the full [-1, 1] axis, where saturation at the bounds is visible for both families.
+        """
+        normalizations = {
+            "Statement Length Normalization\n(All-Words, All-Sentences)": self.measures,
+            "Token Normalization\n(PosNeg)": SentimentMeasures(self.documents, self.config, posneg=True),
+        }
+        n_measures = [len(self.measures.columns_in(family)) for family in FAMILIES]
+        fig, axes = plt.subplots(len(FAMILIES), len(normalizations), figsize=(14, 7.5), height_ratios=n_measures, sharey="row")
+        for col, (title, measures) in enumerate(normalizations.items()):
+            long_form = measures.long_form()
+            for row, family in enumerate(FAMILIES):
+                ax = axes[row, col]
+                order = [measures.labels[column] for column in measures.columns_in(family)]
+                subset = long_form[long_form["Family"] == family]
+                sns.boxplot(data=subset, x="value", y="Measure", order=order, color=self.figure["family_colors"][family], fliersize=1.5, linewidth=0.9, ax=ax)
+                self.style.grid(ax, axis="x")
+                self.style.zero_line(ax, vertical=True)
+                if col == 1:
+                    ax.set_xlim(-1.05, 1.05)
+                ax.set_xlabel("")
+                ax.set_ylabel(f"{family}" if col == 0 else "")
+                if row == 0:
+                    ax.set_title(title)
+            axes[-1, col].set_xlabel("Sentiment")
+        fig.suptitle("Distribution of statement-level sentiment", fontsize=self.figure["font"]["title"] + 7)
         return self.style.save(fig, "method_distributions.pdf")
 
     def correlations(self) -> Path:
@@ -53,27 +72,32 @@ class MethodComparisonFigures:
         n_lexical = len(self.measures.columns_in(LEXICAL))
         ax.axhline(n_lexical, color="black", linewidth=1.4)
         ax.axvline(n_lexical, color="black", linewidth=1.4)
-        ax.set_title(f"Document-level correlations across sentiment methods, pooled across {self.n_banks} central banks")
+        ax.set_title("Document-level correlations across sentiment methods")
         plt.setp(ax.get_xticklabels(), rotation=40, ha="right")
         plt.setp(ax.get_yticklabels(), rotation=0)
         return self.style.save(fig, "method_correlation_levels.pdf")
 
     def time_series(self) -> Path:
-        """Figure 5: rolling monthly means averaged across banks, one panel per family."""
+        """Figure 5: rolling monthly means averaged across banks, one panel per family.
+
+        Each family has its own y-axis, since All-Words values are an order of magnitude
+        smaller than All-Sentences values.
+        """
         monthly = self._smoothed(self.measures.monthly_bank_average())
-        fig, axes = plt.subplots(1, 2, figsize=(15, 6.5), sharey=True)
+        fig, axes = plt.subplots(1, 2, figsize=(15, 6.5))
         for ax, family in zip(axes, FAMILIES):
             self._plot_family(ax, monthly, self.measures, family)
             ax.set_title(f"{family} methods", loc="left")
-        axes[0].set_ylabel("Net sentiment")
-        fig.suptitle(f"Net sentiment over time, averaged across {self.n_banks} central banks ({self.figure['rolling_window']}-month rolling mean)")
-        self.style.family_legend(fig, self._measure_lines(axes, self.measures), bottom=0.24, top=0.88)
+        for ax in axes:
+            ax.set_ylabel("Sentiment")
+        fig.suptitle(f"Sentiment averaged across {self.n_banks} central banks")
+        self.style.family_legend(fig, self._measure_lines(axes, self.measures), bottom=0.28, top=0.88, fontsize=self.figure["font"]["legend"] + 3)
         return self.style.save(fig, "method_time_series.pdf", tight=False)
 
     def country_comparison(self) -> Path:
         """Figure 6: rolling monthly means for selected banks, one row per bank."""
         countries = self.figure["panel_countries"]
-        fig, axes = plt.subplots(len(countries), len(FAMILIES), figsize=(15, 4.6 * len(countries)), sharey=True, sharex=True)
+        fig, axes = plt.subplots(len(countries), len(FAMILIES), figsize=(15, 4.6 * len(countries)), sharey="col", sharex=True)
         axes = np.atleast_2d(axes)
         for row, (code, name) in zip(axes, countries.items()):
             bank = SentimentMeasures(self.documents[self.documents["Country"] == code], self.config)
@@ -81,9 +105,9 @@ class MethodComparisonFigures:
             for ax, family in zip(row, FAMILIES):
                 self._plot_family(ax, monthly, bank, family)
                 ax.set_title(f"{name} — {family} methods", loc="left")
-            row[0].set_ylabel("Net sentiment")
-        fig.suptitle(f"Net sentiment by central bank and method family ({self.figure['rolling_window']}-month rolling mean)")
-        self.style.family_legend(fig, self._measure_lines(axes[0], self.measures), bottom=0.16, top=0.92, hspace=0.28)
+            row[0].set_ylabel("Sentiment")
+        fig.suptitle(f"Sentiment by central bank and method family ({self.figure['rolling_window']}-month rolling mean)")
+        self.style.family_legend(fig, self._measure_lines(axes[0], self.measures), bottom=0.18, top=0.92, hspace=0.28, fontsize=self.figure["font"]["legend"] + 3)
         return self.style.save(fig, "panel_country_comparison.pdf", tight=False)
 
     def _smoothed(self, monthly: pd.DataFrame) -> pd.DataFrame:

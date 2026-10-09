@@ -30,7 +30,7 @@ class HeaderContaminationFigure:
         fig, axes = plt.subplots(len(columns), 1, figsize=(9.2, 2.6 * len(columns)), sharex=True)
         for ax, column in zip(np.atleast_1d(axes), columns):
             self._plot_column(ax, column)
-        fig.suptitle("Boilerplate header contamination can shift lexical sentiment", y=0.995)
+        fig.suptitle("Website header contamination can shift lexical sentiment", y=0.995)
         fig.autofmt_xdate()
         path = self.style.save(fig, "sentiment_cleaning_comparison.pdf", tight=False)
         self.style.apply_theme()

@@ -13,17 +13,17 @@ LEXICAL, TRANSFORMER, CROSS = "Lexical", "Transformer", "Cross-family"
 class SentimentMeasures:
     """Document-level scores for the configured measures, all on the shared [-1, 1] scale.
 
-    ``transformer_measures`` picks the transformer columns: the All-Sentences columns
-    by default, or ``transformer_posneg`` for the PosNeg counterparts.
+    Both families always share one normalization: All-Words and All-Sentences by
+    default, or ``posneg=True`` for the PosNeg pair that divides by matched terms
+    and sentiment-bearing sentences only.
     """
 
-    def __init__(self, documents: pd.DataFrame, config: PaperConfig, transformer_measures: str = "transformer") -> None:
+    def __init__(self, documents: pd.DataFrame, config: PaperConfig, posneg: bool = False) -> None:
         measures = config["measures"]
-        self.families = {
-            **dict.fromkeys(measures["lexical"], LEXICAL),
-            **dict.fromkeys(measures[transformer_measures], TRANSFORMER),
-        }
-        self.labels = {**measures["lexical"], **measures[transformer_measures]}
+        suffix = "_posneg" if posneg else ""
+        lexical, transformer = measures[f"lexical{suffix}"], measures[f"transformer{suffix}"]
+        self.families = {**dict.fromkeys(lexical, LEXICAL), **dict.fromkeys(transformer, TRANSFORMER)}
+        self.labels = {**lexical, **transformer}
         self.documents = self._dated(documents)
         self.columns = [column for column in self.labels if column in self.documents.columns]
 
