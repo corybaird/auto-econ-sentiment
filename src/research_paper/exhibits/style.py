@@ -16,7 +16,7 @@ from src.research_paper.config import PaperConfig
 
 logger = logging.getLogger(__name__)
 
-FAMILY_KEY = "Solid: lexical    Dashed: transformer"
+FAMILY_KEY = r"$\mathbf{Solid\colon}$ Lexical methods    $\mathbf{Dashed\colon}$ Transformer methods"
 
 
 class FigureStyle:
@@ -68,9 +68,10 @@ class FigureStyle:
         ax.set_xlim(index.min(), index.max())
         ax.set_xlabel("")
 
-    def family_legend(self, fig: plt.Figure, handles: list, bottom: float, top: float, ncol: int = 5, **adjust) -> None:
+    def family_legend(self, fig: plt.Figure, handles: list, bottom: float, top: float, ncol: int = 5, fontsize: float | None = None, **adjust) -> None:
         """One legend below the figure, keyed by line style to the method family."""
-        fig.legend(handles, [handle.get_label() for handle in handles], loc="lower center", ncol=ncol, frameon=True, bbox_to_anchor=(0.5, 0.0), title=FAMILY_KEY)
+        fontsize = fontsize or self.figure["font"]["legend"]
+        fig.legend(handles, [handle.get_label() for handle in handles], loc="lower center", ncol=ncol, frameon=True, bbox_to_anchor=(0.5, 0.0), title=FAMILY_KEY, fontsize=fontsize, title_fontsize=fontsize)
         fig.subplots_adjust(bottom=bottom, top=top, **adjust)
 
     def save(self, fig: plt.Figure, filename: str, tight: bool = True) -> Path:
