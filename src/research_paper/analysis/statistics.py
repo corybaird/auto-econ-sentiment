@@ -32,12 +32,12 @@ class PaperStatistics:
         self.documents = statements.documents
         self.responses = responses
         self.model_labels = config.model_labels()
-        self.lexical = config["measures"]["lexical"]
+        self.dictionary_labels = {column.split("_")[0]: label for column, label in config["measures"]["lexical"].items()}
 
     def run(self) -> list[Path]:
         sections = {
-            "Transformer PosNeg coverage and saturation (Sections 2.3 and 3.2)": self.transformer_bounds(),
-            "Lexical coverage and saturation (Sections 2.3 and 3.2)": self.lexical_bounds(),
+            "Transformer coverage and saturation by aggregation (Sections 2.3 and 3.2)": self.transformer_bounds(),
+            "Lexical coverage and saturation by aggregation (Sections 2.3 and 3.2)": self.lexical_bounds(),
             "Levels by measure, statement level (Section 3.2)": self.levels(),
             "Levels since 2006, monthly means weighting banks equally (Figure 5)": self.time_series_levels(),
             "Correlation family averages (Figure 4)": self.correlation_summary(),
@@ -51,26 +51,30 @@ class PaperStatistics:
         for short, label in self.model_labels.items():
             posneg = self.documents[f"{short}_sentiment_posneg_net"]
             allsentences = self.documents[f"{short}_sentiment_allsentences_net"]
+            directional = self.documents[f"{short}_count_positive"] + self.documents[f"{short}_count_negative"]
             rows[label] = {
-                "PosNeg undefined (%)": _percent(posneg.isna()),
-                "PosNeg at a bound (% of statements)": _percent(posneg.abs() >= _BOUND),
+                "No sentiment sentence (%)": _percent(directional == 0),
+                "PosNeg at a bound (%)": _percent(posneg.abs() >= _BOUND),
                 "All-Sentences at a bound (%)": _percent(allsentences.abs() >= _BOUND),
+                "PosNeg undefined": int(posneg.isna().sum()),
                 "All-Sentences undefined": int(allsentences.isna().sum()),
             }
         return pd.DataFrame(rows).T
 
     def lexical_bounds(self) -> pd.DataFrame:
         rows = {}
-        for column, label in self.lexical.items():
+        for dictionary, label in self.dictionary_labels.items():
+            stem = "_stem" if dictionary in self.config["lexical"]["dictionaries"]["stemmed"] else ""
             rows[label] = {
-                "No dictionary match (%)": _percent(self._matches(column) == 0),
-                "PosNeg at a bound (%)": _percent(self.documents[column].abs() >= _BOUND),
+                "No dictionary match (%)": _percent(self._matches(dictionary, stem) == 0),
+                "PosNeg at a bound (%)": _percent(self.documents[f"{dictionary}_sentiment_posneg{stem}_net"].abs() >= _BOUND),
+                "All-Words at a bound (%)": _percent(self.documents[f"{dictionary}_sentiment_allwords{stem}_net"].abs() >= _BOUND),
             }
         return pd.DataFrame(rows).T
 
     def levels(self) -> pd.DataFrame:
         rows = {}
-        for measures in (SentimentMeasures(self.documents, self.config), SentimentMeasures(self.documents, self.config, "transformer_posneg")):
+        for measures in (SentimentMeasures(self.documents, self.config), SentimentMeasures(self.documents, self.config, posneg=True)):
             for column in measures.columns:
                 name = f"{measures.labels[column]} ({_aggregation(column)})"
                 rows[name] = {"Mean": measures.values()[column].mean(), "Share above zero": (measures.values()[column] > 0).mean()}
@@ -111,10 +115,8 @@ class PaperStatistics:
                 })
         return pd.DataFrame(rows)
 
-    def _matches(self, column: str) -> pd.Series:
-        """Dictionary matches per statement, positive plus negative, for a lexical measure column."""
-        dictionary = column.split("_")[0]
-        stem = "_stem" if "_stem" in column else ""
+    def _matches(self, dictionary: str, stem: str) -> pd.Series:
+        """Dictionary matches per statement, positive plus negative."""
         counts = [self.documents[f"{dictionary}_counttoken_{side}_posneg{stem}"] for side in ("positive", "negative")]
         return counts[0] + counts[1]
 
@@ -133,7 +135,9 @@ def _percent(flags: pd.Series) -> float:
 
 
 def _aggregation(column: str) -> str:
-    return "All-Sentences" if "allsentences" in column else "PosNeg"
+    if "allsentences" in column:
+        return "All-Sentences"
+    return "All-Words" if "allwords" in column else "PosNeg"
 
 
 def _month_ranges(months: list[int]) -> str:
