@@ -301,8 +301,8 @@ def test_sentence_aggregation_posneg_and_allsentences_net():
     assert df_score.loc["a", "fake_count_sentences"] == 4
     assert df_score.loc["a", "fake_sentiment_posneg_net"] == pytest.approx(-1 / 3)
     assert df_score.loc["a", "fake_sentiment_allsentences_net"] == pytest.approx(-1 / 4)
-    # No sentence clears the cutoff: PosNeg is unmeasured, AllSentences is neutral.
-    assert pd.isna(df_score.loc["c", "fake_sentiment_posneg_net"])
+    # No sentence clears the cutoff: both aggregations score the neutral zero.
+    assert df_score.loc["c", "fake_sentiment_posneg_net"] == pytest.approx(0.0)
     assert df_score.loc["c", "fake_sentiment_allsentences_net"] == pytest.approx(0.0)
 
 
