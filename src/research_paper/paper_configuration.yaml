@@ -162,10 +162,10 @@ var:
     short_rate: Short-term rate
     credit_spread: Credit spread
   measures:
-    hubert_sentiment_allwords_net: "Lexical: Hubert-Labondance"
+    hubert_sentiment_posneg_net: "Lexical: Hubert-Labondance"
     cbroberta_sentiment_allsentences_net: "Transformer: CentralBankRoBERTa"
   measure_colors:
-    hubert_sentiment_allwords_net: "#1f77b4"
+    hubert_sentiment_posneg_net: "#1f77b4"
     cbroberta_sentiment_allsentences_net: "#d62728"
 
 # FRED series fetched into paths.macro, and how each enters the VAR.
@@ -204,13 +204,13 @@ exhibits:
   sentence_audit:                             # Table 3
     country: US
     date: "2020-03-03"
-    rows: [1, 2, 3, 4, 5]                     # sentences shown; the notes describe the rest
+    rows: [1, 2, 3, 4]                        # sentences shown; the notes describe the rest
     # Editorial shortening of long sentences. Every fragment between \ldots must occur
     # in the scored sentence (ignoring spaces), which the table checks before writing.
     abridged:
       1: "The fundamentals of the U.S. economy remain strong."
       3: "In light of these risks \\ldots\\ decided today to lower the target range for the federal funds rate \\ldots"
-      5: "The Committee is closely monitoring developments \\ldots\\ act as appropriate to support the economy."
+      4: "The Committee is closely monitoring developments \\ldots\\ act as appropriate to support the economy."
     dictionary_abbreviations: {correa: Correa, hubert: HL, lm: LM, hiv: GI, bn: BN, ap: ABG}
     model_columns: {cbroberta: CB-RoBERTa, finbertpro: FinBERT, fomc: FOMC-RoBERTa}
     class_names:
