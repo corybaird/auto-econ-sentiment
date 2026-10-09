@@ -155,7 +155,8 @@ class TextCleaner:
     def normalize_whitespace(text):
         text = re.sub(r"\r\n|\r|\n", " ", text)
         text = re.sub(r"\s+", " ", text)
-        text = re.sub(r"\s*([.!?])\s*", r"\1 ", text)
+        # A period followed by a digit is a decimal point, not a sentence end.
+        text = re.sub(r"\s*([.!?])(?!\d)\s*", r"\1 ", text)
         return text.strip()
 
     @staticmethod
@@ -183,8 +184,13 @@ class TextCleaner:
             "1/3": ".33",
             "2/3": ".67",
         }
+        # A fraction joins a preceding whole number ("1-1/4" or "1 1/4" to "1.25") and
+        # otherwise gets a leading zero ("1/2" to "0.5"), so the decimal point is never
+        # read as a sentence end. Slash fractions inside dates or larger numbers are kept.
         for old, new in replacements.items():
-            text = text.replace(old, new)
+            separator = r"[-\s]?" if "/" not in old else r"[-\s]"
+            pattern = rf"(?<![\d/.])(?:(\d+){separator})?{re.escape(old)}(?![\d/])"
+            text = re.sub(pattern, lambda match: f"{match.group(1) or '0'}{new}", text)
 
         text = re.sub(r"percentage", "%", text)
         text = re.sub(r"percent", "%", text)
